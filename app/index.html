@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>Document</title>
+
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body ng-app="FluidApp">
-    <div ng-controller="MainController as main">
-        {{main.test}}
-
-        <div fl-id ng-show="!a.b">
-            {{foo}}
+    <div class="row content" ng-controller="MainController as main">
+        <div class="field" ng-repeat="state in main.states" ng-click="main.toggle(state)">
+            <strong ng-class="{'color-secondary': !state.active}">{{state.id}}</strong>
         </div>
     </div>
 </body>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.18/angular.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
 <script src="app/FluidModule.js"></script>
 <script src="app/FluidService.js"></script>
 </html>

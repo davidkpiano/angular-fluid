@@ -1,12 +1,18 @@
 angular.module('FluidApp', []);
 
 angular.module('FluidApp')
-    .controller('MainController', [function() {
-        this.test = "testing";
+    .controller('MainController', ['FluidService', function(FluidService) {
+
+        this.states = FluidService.getStates();
+
+        this.toggle = function(state) {
+            state.toggle();
+            this.states = FluidService.getStates();
+        }
     }]);
 
 angular.module('FluidApp')
-    .directive('flId', [function() {
+    .directive('flState', [function() {
         return {
             restrict: 'A',
             replace: false,

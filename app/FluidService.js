@@ -2,14 +2,77 @@
 
 angular.module('FluidApp')
     .service('FluidService', [function() {
+        var fl = new FluidInstance();
 
+        fl.addState('login');
+        fl.addState('login.loading');
+        fl.addState('login.failure');
+        fl.addState('login.success');
+
+        fl.addState('credentials');
+        fl.addState('credentials:usernameError');
+        fl.addState('credentials:passwordError');
+        fl.addState('credentials.valid');
+
+        this.toggle = function(state) {
+            state.toggle();
+        }
+
+        this.getStates = function() {
+            return fl.states;
+        }
     }]);
 
 // Constructor for FluidState
 function FluidState(id, params, FluidInstance) {
+    var self = this;
+
+    this.meta = {};
+
     this.id = id;
 
+    this.meta.id = this.parseId(this.id);
+
+    this.parallel = this.meta.id.params[0].parallel;
+
     this.instance = FluidInstance;
+
+    this.children = [];
+
+    this.active = false;
+
+    this.activate = function() {
+        console.log('activating');
+        if (self.active) return true;
+
+        if (self.parent) {        
+            if (!self.parallel) {
+                _.each(this.parent.children, function(state) {
+                    state.deactivate();
+                });
+            } else {
+                _.each(this.parent.children, function(state) {
+                    if (!state.parallel) {
+                        state.deactivate();
+                    }
+                });
+            }
+        }
+
+        self.active = true;
+
+        return self;
+    }
+
+    this.deactivate = function() {
+        if (!self.active) return true;
+
+        self.active = false;
+    }
+
+    this.toggle = function() {
+        self[self.active ? 'deactivate' : 'activate']();
+    }
 }
 
 FluidState.prototype.parseId = function(id) {
@@ -37,7 +100,7 @@ FluidState.prototype.parseId = function(id) {
 
     idData.parent = idData.params
         .splice(0, idData.params.length - 1)
-        .join('');
+        .join('') || null;
 
     // console.log(idParams);
 
@@ -66,13 +129,18 @@ function FluidInstance() {
         // 1. Split the ID string
         var state = new FluidState(id, {}, self);
 
-        // state.setParent(self.getState)
-        console.log(state);
+        // Add state's parent
+        state.parent = this.getState(state.meta.id.parent);
+        if (state.parent) state.parent.children.push(state);
 
-        return state.parseId(id);
+        self.states.push(state);
+
+        return state;
     }
 
     this.getState = function(id) {
+        if (id == null) return null;
+
         var stateResults = self.states.filter(function(state) {
             return state.id === id;
         });
