@@ -1,30 +1,41 @@
 
 
 angular.module('FluidApp')
-    .service('FluidService', [function() {
-        var fl = new FluidInstance();
+    .service('FluidService', ['$rootScope', function($rootScope) {
+        var self = this;
 
-        fl.addState('login');
-        fl.addState('login.loading');
-        fl.addState('login.failure');
-        fl.addState('login.success');
+        // this.toggle = function(state) {
+        //     state.toggle();
 
-        fl.addState('credentials');
-        fl.addState('credentials:usernameError');
-        fl.addState('credentials:passwordError');
-        fl.addState('credentials.valid');
+        //     $rootScope.$apply(function() {
+        //         this.states = fl.states;
+        //     });
+        // }
 
-        this.toggle = function(state) {
-            state.toggle();
+        this.register = function(id, data) {
+            return new FluidInstance(id, reference(id, data), $rootScope);
         }
 
-        this.getStates = function() {
-            return fl.states;
+        var reference = function(id, data) {
+            if (data) {
+                $rootScope.fl[id] = data;
+            }
+
+            return $rootScope.fl[id] || null;
         }
+
+        $rootScope.fl = {};
+
+        $rootScope.$watch('fl.login.user', function(a, b) {
+            console.log('something happened');
+            console.log(a);
+        });
+
+        // this.states = fl.states;
     }]);
 
 // Constructor for FluidState
-function FluidState(id, params, FluidInstance) {
+function FluidState(id, rule, FluidInstance) {
     var self = this;
 
     this.meta = {};
@@ -37,32 +48,13 @@ function FluidState(id, params, FluidInstance) {
 
     this.instance = FluidInstance;
 
-    this.children = [];
+    this.states = [];
+
+    this.triggers = [];
 
     this.active = false;
 
-    this.activate = function() {
-        console.log('activating');
-        if (self.active) return true;
-
-        if (self.parent) {        
-            if (!self.parallel) {
-                _.each(this.parent.children, function(state) {
-                    state.deactivate();
-                });
-            } else {
-                _.each(this.parent.children, function(state) {
-                    if (!state.parallel) {
-                        state.deactivate();
-                    }
-                });
-            }
-        }
-
-        self.active = true;
-
-        return self;
-    }
+    this.rules = [];
 
     this.deactivate = function() {
         if (!self.active) return true;
@@ -73,6 +65,18 @@ function FluidState(id, params, FluidInstance) {
     this.toggle = function() {
         self[self.active ? 'deactivate' : 'activate']();
     }
+
+    var initialize = function() {
+        self.rule('initial', rule);
+    }
+
+    initialize();
+}
+
+FluidState.prototype.addTrigger = function(property) {
+    console.log("Adding trigger for '%s'", property);
+    this.instance.addWatcher(this, property);
+    this.triggers.push(property);
 }
 
 FluidState.prototype.parseId = function(id) {
@@ -119,19 +123,112 @@ FluidState.prototype.parseId = function(id) {
     return idData;
 }
 
-// Constructor for FluidInstance
-function FluidInstance() {
+FluidState.prototype.validate = function() {
+    // Check rules
+    var rules = this.rules;
+
+    var valid = true;
+
+    console.log(rules);
+
+    angular.forEach(rules, function(rule) {
+        if (!(rule instanceof FluidRule)) {
+            throw 'Invalid rule';
+        }
+
+        valid = valid && rule.validate();
+    });
+
+    console.log("%s valid: %s", this.id, valid);
+
+    if (valid) {
+        this.activate();
+    } else {
+        this.deactivate();
+    }
+    
+    // Activate/Deactivate if rules true/false
+}
+
+FluidState.prototype.activate = function() {
+    console.log('activating');
+    if (this.active) return true;
+
+    if (this.parent) {        
+        if (!this.parallel) {
+            _.each(this.parent.states, function(state) {
+                state.deactivate();
+            });
+        } else {
+            _.each(this.parent.states, function(state) {
+                if (!state.parallel) {    
+                    state.deactivate();
+                }
+            });
+        }
+
+        // this.parent.validate();
+
+        this.parent.activate();
+    }
+
+    this.active = true;
+
+    return this;
+}
+
+FluidState.prototype.rule = function(id, rule) {
+    if (!rule) {
+        return _.find(this.rules, {id: id});
+    };
+
+    var rule = new FluidRule(id, rule, this);
+
+    this.rules.push(rule);
+
+    return this;
+}
+
+// Constructor for FluidRule
+function FluidRule(id, rule, FluidState) {
+    this.id = id;
+
+    this.state = FluidState;
+
+    this.validate = this.parseValidate(rule);
+}
+
+FluidRule.prototype.parseValidate = function(rule) {
     var self = this;
+
+    if (angular.isString(rule)) {
+        var properties = rule.split(/\s+/);
+
+        _.each(properties, function(property) {
+            self.state.addTrigger(property);
+        });
+
+        rule = function() {return true;}
+    };
+
+    return rule;
+}
+
+// Constructor for FluidInstance
+function FluidInstance(id, data, $rootScope) {
+    var self = this;
+
+    this.id = id;
 
     this.states = [];
 
-    this.addState = function(id) {
+    this.addState = function(id, rules) {
         // 1. Split the ID string
-        var state = new FluidState(id, {}, self);
+        var state = new FluidState(id, rules, self);
 
         // Add state's parent
         state.parent = this.getState(state.meta.id.parent);
-        if (state.parent) state.parent.children.push(state);
+        if (state.parent) state.parent.states.push(state);
 
         self.states.push(state);
 
@@ -152,5 +249,14 @@ function FluidInstance() {
         }
 
         return stateResults[0];
+    }
+
+    this.watchTrigger = function(state, property) {
+        console.log("Adding trigger '%s' for state '%s'", property, state.id);
+        
+        $rootScope.$watch(['fl', self.id, property].join('.'), function(a, b) {
+            console.log("old: %s, new: %s", a, b);
+            state.validate();
+        });
     }
 }

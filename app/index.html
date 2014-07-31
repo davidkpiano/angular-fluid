@@ -6,10 +6,26 @@
 
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body ng-app="FluidApp">
-    <div class="row content" ng-controller="MainController as main">
-        <div class="field" ng-repeat="state in main.states" ng-click="main.toggle(state)">
-            <strong ng-class="{'color-secondary': !state.active}">{{state.id}}</strong>
+<body ng-app="FluidApp" class="layer">
+    <div class="row-12 content theme-primary" ng-controller="LoginController as login">
+        <div class="col-6 col-auto col-center theme-white content">
+            <h1>Login Form</h1>
+            <div class="field">
+                <label>Username</label>
+                <input type="text" name="" id="" ng-model="login.user">
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="text" name="" id="" ng-model="login.pass">
+            </div>
+            <div class="field clearfix">
+                <button class="right" ng-click="login.login()">Login</button>
+            </div>
+            <div class="field">            
+                <pre>userValid: {{login.ui.getState('userValid').active}}</pre>
+                <pre>passValid: {{login.ui.getState('passValid').active}}</pre>
+                <pre>formValid: {{login.ui.getState('formValid').active}}</pre>
+            </div>
         </div>
     </div>
 </body>

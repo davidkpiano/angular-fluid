@@ -1,6 +1,6 @@
 
 angular.module('FluidApp')
-    .directive('flId', [function() {
+    .directive('flState', [function() {
         return {
             restrict: 'A',
             replace: false,
@@ -8,7 +8,8 @@ angular.module('FluidApp')
                 $scope.foo = 'bar';
 
                 $scope.a = {b: false};
-            }]
+            }],
+            controllerAs: 'fl'
         }
     }]);
 
