@@ -22,16 +22,17 @@
                 <button class="right" ng-click="login.login()">Login</button>
             </div>
             <div class="field">            
-                <pre>userValid: {{login.ui.getState('userValid').active}}</pre>
-                <pre>passValid: {{login.ui.getState('passValid').active}}</pre>
-                <pre>formValid: {{login.ui.getState('formValid').active}}</pre>
+                <pre>userValid: {{login.FL.getState('userValid').active}}</pre>
+                <pre>passValid: {{login.FL.getState('passValid').active}}</pre>
+                <pre>formValid: {{login.FL.getState('formValid').active}}</pre>
             </div>
+            <pre>{{login.FL.state | json}}</pre>
         </div>
     </div>
 </body>
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.18/angular.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<script src="assets/js/angular.min.js"></script>
+<script src="assets/js/lodash.min.js"></script>
 <script src="app/FluidModule.js"></script>
 <script src="app/FluidService.js"></script>
 </html>

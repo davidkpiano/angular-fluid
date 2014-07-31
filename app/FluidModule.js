@@ -6,10 +6,12 @@ angular.module('FluidApp')
 
         self.foo = 'bar';
 
-        self.ui = FluidService.register('login', self);
+        var FL = self.FL = FluidService.register('login', self);
+
+        self.state = self.FL._states;
 
         self.login = function() {
-            self.ui.getState('userValid').validate();
+            FL.getState('userValid').validate();
 
             LoginService.login(self.user, self.pass)
                 .then(function(data) {
@@ -21,22 +23,20 @@ angular.module('FluidApp')
                 });
         }
 
-        self.ui.addState('userValid', 'user')
+        FL.addState('userValid', 'user')
             .rule('length', function() {
                 return self.user && self.user.length > 6;
             });
 
-        self.ui.addState('passValid', 'pass')
+        FL.addState('passValid', 'pass')
             .rule('length', function() {
                 return self.pass && self.pass.length;
             });
 
-        self.ui.addState('formValid', 'user pass')
+        FL.addState('formValid', 'user pass')
             .rule('valid', function() {
-                return self.ui.getState('userValid').active && self.ui.getState('passValid').active;
+                return FL.getState('userValid').active && FL.getState('passValid').active;
             });
-
-        console.log(self.ui.getState('userValid'));
     }]);
 
 

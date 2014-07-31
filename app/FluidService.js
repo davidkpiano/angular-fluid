@@ -26,11 +26,6 @@ angular.module('FluidApp')
 
         $rootScope.fl = {};
 
-        $rootScope.$watch('fl.login.user', function(a, b) {
-            console.log('something happened');
-            console.log(a);
-        });
-
         // this.states = fl.states;
     }]);
 
@@ -75,14 +70,14 @@ function FluidState(id, rule, FluidInstance) {
 
 FluidState.prototype.addTrigger = function(property) {
     console.log("Adding trigger for '%s'", property);
-    this.instance.addWatcher(this, property);
+    this.instance.watchTrigger(this, property);
     this.triggers.push(property);
 }
 
 FluidState.prototype.parseId = function(id) {
     var idData = {
         id: id,
-        parent: null,
+        parent: 'root',
         params: id.match(/([\:\.]?\w+)/g)
     };
 
@@ -104,7 +99,7 @@ FluidState.prototype.parseId = function(id) {
 
     idData.parent = idData.params
         .splice(0, idData.params.length - 1)
-        .join('') || null;
+        .join('') || id == 'root' ? null : 'root';
 
     // console.log(idParams);
 
@@ -222,6 +217,35 @@ function FluidInstance(id, data, $rootScope) {
 
     this.states = [];
 
+    this.state = {};
+
+    this.getStates = function() {
+        console.log('####');
+        return (self.state = {
+            root: representState(self.getState('root'))
+        });
+
+        function representState(state) {
+            var states = {};
+
+            var allStatesInactive = true;
+
+            console.log("Representing state '%s'", state.id);
+            console.log(state);
+
+            if (!state.active) return false;
+
+            if (!state.states.length) return true;
+
+            _.forEach(state.states, function(state) {
+                allStatesInactive = allStatesInactive && !representState(state);
+                states[state.id] = representState(state);
+            });
+
+            return allStatesInactive ? false : states;
+        }
+    }
+
     this.addState = function(id, rules) {
         // 1. Split the ID string
         var state = new FluidState(id, rules, self);
@@ -252,11 +276,22 @@ function FluidInstance(id, data, $rootScope) {
     }
 
     this.watchTrigger = function(state, property) {
+        if (!property.length) return;
+
         console.log("Adding trigger '%s' for state '%s'", property, state.id);
-        
+
         $rootScope.$watch(['fl', self.id, property].join('.'), function(a, b) {
             console.log("old: %s, new: %s", a, b);
             state.validate();
+            self.getStates();
         });
     }
+
+    var initialize = function() {
+        self.addState('root', 'user');
+
+        self.getStates();
+    };
+
+    initialize();
 }
