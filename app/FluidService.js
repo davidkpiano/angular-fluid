@@ -77,7 +77,7 @@ FluidState.prototype.addTrigger = function(property) {
 FluidState.prototype.parseId = function(id) {
     var idData = {
         id: id,
-        parent: 'root',
+        parent: null,
         params: id.match(/([\:\.]?\w+)/g)
     };
 
@@ -99,7 +99,7 @@ FluidState.prototype.parseId = function(id) {
 
     idData.parent = idData.params
         .splice(0, idData.params.length - 1)
-        .join('') || id == 'root' ? null : 'root';
+        .join('') || id == FluidInstance.id ? null : FluidInstance.id;
 
     // console.log(idParams);
 
@@ -220,12 +220,13 @@ function FluidInstance(id, data, $rootScope) {
     this.state = {};
 
     this.getStates = function() {
-        console.log('####');
-        return (self.state = {
-            root: representState(self.getState('root'))
-        });
+        var state = {};
 
-        function representState(state) {
+        state[self.id] = simplifyState(self.getState(self.id));
+
+        return (self.state = state);
+
+        function simplifyState(state) {
             var states = {};
 
             var allStatesInactive = true;
@@ -238,8 +239,9 @@ function FluidInstance(id, data, $rootScope) {
             if (!state.states.length) return true;
 
             _.forEach(state.states, function(state) {
-                allStatesInactive = allStatesInactive && !representState(state);
-                states[state.id] = representState(state);
+                var simpleState = simplifyState(state);
+                allStatesInactive = allStatesInactive && !simpleState;
+                states[state.id] = simpleState;
             });
 
             return allStatesInactive ? false : states;
@@ -251,7 +253,8 @@ function FluidInstance(id, data, $rootScope) {
         var state = new FluidState(id, rules, self);
 
         // Add state's parent
-        state.parent = this.getState(state.meta.id.parent);
+        state.parent = this.getState(state.meta.id.parent || self.id == id ? null : self.id);
+
         if (state.parent) state.parent.states.push(state);
 
         self.states.push(state);
@@ -288,7 +291,7 @@ function FluidInstance(id, data, $rootScope) {
     }
 
     var initialize = function() {
-        self.addState('root', 'user');
+        self.addState(self.id, 'user');
 
         self.getStates();
     };

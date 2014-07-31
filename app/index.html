@@ -22,9 +22,9 @@
                 <button class="right" ng-click="login.login()">Login</button>
             </div>
             <div class="field">            
-                <pre>userValid: {{login.FL.getState('userValid').active}}</pre>
-                <pre>passValid: {{login.FL.getState('passValid').active}}</pre>
-                <pre>formValid: {{login.FL.getState('formValid').active}}</pre>
+                <pre>userValid: {{fl.login.userValid}}</pre>
+                <pre>passValid: {{fl.login.passValid}}</pre>
+                <pre>formValid: {{fl.login.formValid}}</pre>
             </div>
             <pre>{{login.FL.state | json}}</pre>
         </div>
