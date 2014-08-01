@@ -8,6 +8,8 @@ function FluidState(id, rule, fluidInstance) {
 
     this.meta.id = this.parseId(this.id);
 
+    this.name = this.meta.id.name;
+
     this.parallel = this.meta.id.params[0].parallel;
 
     this.instance = fluidInstance;
@@ -51,6 +53,7 @@ FluidState.prototype.parseId = function(id) {
     var idData = {
         id: id,
         parent: null,
+        name: null,
         params: id.match(/([\:\.]?\w+)/g)
     };
 
@@ -87,6 +90,8 @@ FluidState.prototype.parseId = function(id) {
 
         return angular.extend({ param: param }, tagMapItem);
     });
+
+    idData.name = idData.params.slice(-1)[0].param;
 
     return idData;
 }

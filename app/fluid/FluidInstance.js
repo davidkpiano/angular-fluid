@@ -29,7 +29,7 @@ function FluidInstance(id, data, $rootScope, $parse) {
             _.forEach(state.states, function(state) {
                 var simpleState = simplifyState(state);
                 allStatesInactive = allStatesInactive && !simpleState;
-                states[state.id] = simpleState;
+                states[state.name] = simpleState;
             });
 
             return allStatesInactive ? false : states;
