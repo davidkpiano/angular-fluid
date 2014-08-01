@@ -19,14 +19,10 @@
                 <input type="text" name="" id="" ng-model="login.pass">
             </div>
             <div class="field clearfix">
-                <button class="right" ng-click="login.login()">Login</button>
+                <button class="right" ng-click="login.login()" ng-disabled="!login.ui.login.formValid">Login</button>
+                <span ng-show="login.ui.login.formValid">you can login!</span>
             </div>
-            <div class="field">            
-                <pre>userValid: {{fl.login.userValid}}</pre>
-                <pre>passValid: {{fl.login.passValid}}</pre>
-                <pre>formValid: {{fl.login.formValid}}</pre>
-            </div>
-            <pre>{{login.FL.state | json}}</pre>
+            <pre>{{login.ui | json}}</pre>
         </div>
     </div>
 </body>

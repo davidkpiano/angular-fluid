@@ -11,11 +11,11 @@ function FluidInstance(id, data, $rootScope, $parse) {
     this.state = {};
 
     this.getStates = function() {
-        var state = {};
+        var state = self.state;
 
         state[self.id] = simplifyState(self);
 
-        return (self.state = state);
+        return (state);
 
         function simplifyState(state) {
             var states = {};

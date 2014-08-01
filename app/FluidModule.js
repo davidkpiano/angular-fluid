@@ -6,12 +6,12 @@ angular.module('FluidApp')
 
         self.foo = 'bar';
 
-        var FL = window.FL = self.FL = FluidService.register('login', self);
+        var FL = window.FL = FluidService.register('login', self);
 
-        self.state = self.FL._states;
+        self.ui = FL.state;
 
         self.login = function() {
-            FL.getState('userValid').validate();
+            FL.getState('user.valid').validate();
 
             LoginService.login(self.user, self.pass)
                 .then(function(data) {
