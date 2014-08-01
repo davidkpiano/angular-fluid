@@ -6,7 +6,7 @@ angular.module('FluidApp')
 
         self.foo = 'bar';
 
-        var FL = self.FL = FluidService.register('login', self);
+        var FL = window.FL = self.FL = FluidService.register('login', self);
 
         self.state = self.FL._states;
 
@@ -23,19 +23,20 @@ angular.module('FluidApp')
                 });
         }
 
-        FL.addState('userValid', 'user')
-            .rule('length', function() {
-                return self.user && self.user.length > 6;
-            });
+        FL.createState('user', 'user');
 
-        FL.addState('passValid', 'pass')
+        FL.createState('user.valid', function() {
+            return self.user && self.user.length > 6;
+        });
+
+        FL.createState('passValid', 'pass')
             .rule('length', function() {
                 return self.pass && self.pass.length;
             });
 
-        FL.addState('formValid', 'user pass')
+        FL.createState('formValid', 'user && pass')
             .rule('valid', function() {
-                return FL.getState('userValid').active && FL.getState('passValid').active;
+                return FL.getState('user.valid').active && FL.getState('passValid').active;
             });
     }]);
 
