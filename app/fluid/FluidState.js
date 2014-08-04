@@ -20,6 +20,8 @@ function FluidState(id, rule, fluidInstance) {
 
     this.triggers = [];
 
+    this.trigger = null;
+
     this.active = false;
 
     this.rules = [];
@@ -45,8 +47,10 @@ function FluidState(id, rule, fluidInstance) {
 
 FluidState.prototype.addTrigger = function(property) {
     console.log("Adding trigger for '%s'", property);
-    this.instance.watchTrigger(this, property);
-    this.triggers.push(property);
+
+    this.instance.addTrigger(property, this);
+
+    // this.triggers.push(property);
 }
 
 FluidState.prototype.parseId = function(id) {
@@ -129,9 +133,6 @@ FluidState.prototype.validate = function() {
 
 FluidState.prototype.activate = function() {
     console.log("Activating state '%s'", this.id);
-    console.log(this.active);
-    // if (this.active) return true;
-    console.log("here");
 
     this.active = true;
 
@@ -161,4 +162,12 @@ FluidState.prototype.rule = function(id, rule) {
     this.rules.push(rule);
 
     return this;
+}
+
+FluidState.prototype.setTrigger = function(trigger) {
+    var self = this;
+
+    if (trigger instanceof FluidTrigger) {
+        self.trigger = trigger;
+    }
 }

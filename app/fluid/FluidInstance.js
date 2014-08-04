@@ -2,6 +2,53 @@
 function FluidInstance(id, data, $rootScope, $parse) {
     var self = this;
 
+    this.settings = {
+        regex: {
+            TRIGGER: /^@?[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
+            TRIGGER_STATE: /^@[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
+            TRIGGER_PROPERTY: /^[a-zA-Z_$][0-9a-zA-Z_$\.]*$/
+        }
+    }
+
+    this.components = {
+        triggers: [
+            {
+                type: 'state',
+                regex: /^@[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
+                link: function(trigger) {
+                    var id = trigger.id.slice(1);
+
+                    self.getState(id)
+                        .setTrigger(trigger);
+                }
+            },
+            {
+                type: 'property',
+                regex: /^[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
+                link: function(trigger) {
+                    var id = trigger.id;
+
+                    console.log("Adding $watch for trigger '%s'", id);
+
+                    $rootScope.$watch(['fl', self.id, id].join('.'), function(a, b) {
+                        console.log("old: %s, new: %s", a, b);
+                        trigger.trigger();
+                        self.getStates();
+                    });
+                }
+            },
+            {
+                type: 'default',
+                regex: /^@?[a-zA-Z_$][0-9a-zA-Z_$\.]*$/
+            }
+        ],
+        trigger: function(trigger) {
+            return _.find(self.components.triggers, function(triggerComponent) {
+                return triggerComponent.regex.test(trigger.id);
+            });
+        }
+    }
+
     this.id = id;
 
     this.allStates = [];
@@ -9,6 +56,8 @@ function FluidInstance(id, data, $rootScope, $parse) {
     this.states = [];
 
     this.state = {};
+
+    this.triggers = [];
 
     this.getStates = function() {
         var state = self.state;
@@ -68,17 +117,29 @@ function FluidInstance(id, data, $rootScope, $parse) {
         return stateResults[0];
     }
 
-    this.watchTrigger = function(state, property) {
-        if (!property.length) return;
+    this.addTrigger = function(id, state) {
+        if (!id.length) return;
 
-        if (property == '&&' || property == '||') return;
+        if (id == '&&' || id == '||') return;
 
-        console.log("Adding trigger '%s' for state '%s'", property, state.id);
+        console.log("Adding trigger '%s' for state '%s'", id, state.id);
 
-        $rootScope.$watch(['fl', self.id, property].join('.'), function(a, b) {
-            console.log("old: %s, new: %s", a, b);
-            state.validate();
-            self.getStates();
+        var trigger = this.getTrigger(id);
+
+        if (!trigger) {
+            trigger = new FluidTrigger(id, self);
+
+            self.triggers.push(trigger);
+        }
+
+        trigger.addState(state);
+
+        return self;
+    }
+
+    this.getTrigger = function(id) {
+        return _.find(self.triggers, function(trigger) {
+            return trigger.id === id;
         });
     }
 
