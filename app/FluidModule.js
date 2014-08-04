@@ -13,20 +13,23 @@ angular.module('FluidApp')
         self.login = function() {
             FL.getState('user.valid').validate();
 
+            FL.getState('status').activate();
+            FL.getState('status.loading').activate();
+
             LoginService.login(self.user, self.pass)
                 .then(function(data) {
-                    alert('logged in!');
+                    FL.getState('status.loaded').activate();
                 },
 
                 function(data) {
-                    alert('Incorrect credentials!');
+                    FL.getState('status.error').activate();
                 });
         }
 
         FL.createState('user', 'user');
 
         FL.createState('user.valid', function() {
-            return self.user && self.user.length > 6;
+            return self.user && self.user.length >= 5;
         });
 
         FL.createState('passValid', 'pass && @user.valid')
@@ -35,6 +38,11 @@ angular.module('FluidApp')
             });
 
         FL.createState('formValid', '@user.valid && @passValid');
+
+        FL.createState('status');
+        FL.createState('status.loading');
+        FL.createState('status.loaded');
+        FL.createState('status.error');
     }]);
 
 
@@ -43,7 +51,7 @@ angular.module('FluidApp')
         var self = this;
 
         var credentials = {
-            user: 'foo',
+            user: 'foofoo',
             pass: 'bar'
         };
 

@@ -10,6 +10,10 @@
     <div class="row-12 content theme-primary" ng-controller="LoginController as login">
         <div class="col-6 col-auto col-center theme-white content">
             <h1>Login Form</h1>
+            <div class="alert light" ng-show="login.ui.login.status.loading">Logging in...</div>
+            <div class="alert success" ng-show="login.ui.login.status.loaded">Logged in!</div>
+            <div class="alert failure" ng-show="login.ui.login.status.error">Incorrect credentials.</div>
+            
             <div class="field">
                 <label>Username</label>
                 <input type="text" name="" id="" ng-model="login.user">

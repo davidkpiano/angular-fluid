@@ -90,6 +90,8 @@ function FluidInstance(id, data, $rootScope, $parse) {
     this.createState = function(id, rule) {
         console.log("Creating state '%s'", id);
 
+        var rule = rule || null;
+
         var state = new FluidState(id, rule, self);
 
         self.allStates.push(state);

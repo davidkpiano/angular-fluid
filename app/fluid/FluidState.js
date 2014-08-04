@@ -24,6 +24,9 @@ function FluidState(id, rule, instance) {
 
     this.active = false;
 
+    // Marker for whether a state should be manually activated
+    this.manual = false;
+
     this.rules = [];
 
     this.toggle = function() {
@@ -31,7 +34,11 @@ function FluidState(id, rule, instance) {
     }
 
     var initialize = function() {
-        self.addRule('initial', rule);
+        self.manual = (rule === null);
+
+        rule && self.addRule('initial', rule);
+
+        console.log(self.meta.id.parent);
 
         instance.getState(self.meta.id.parent).addState(self);
     }
@@ -104,25 +111,33 @@ FluidState.prototype.validate = function() {
     // Check rules
     var rules = this.rules;
 
+    if (!rules.length) return true;
+
     var valid = true;
 
-    angular.forEach(rules, function(rule) {
-        if (!(rule instanceof FluidRule)) {
-            throw 'Invalid rule';
-        }
-
+    _.forEach(rules, function(rule) {
         valid = valid && rule.validate();
     });
 
-    console.log("%s valid: %s", this.id, valid);
-
-    if (valid) {
+    if (valid && !this.manual) {
         this.activate();
-    } else {
+    } else if (!valid) {
         this.deactivate();
     }
-    
-    // Activate/Deactivate if rules true/false
+}
+
+FluidState.prototype.validateSiblings = function() {
+    var siblings = this.getSiblings();
+
+    if (this.parallel) {
+        _.each(_.where(siblings, {parallel: false, active: true}), function(siblingState) {
+            siblingState.deactivate();
+        });
+    } else {
+        _.each(_.where(siblings, {active: true}), function(siblingState) {
+            siblingState.deactivate();
+        });
+    }
 }
 
 FluidState.prototype.activate = function() {
@@ -132,9 +147,13 @@ FluidState.prototype.activate = function() {
 
     this.active = true;
 
+    stateChanged && this.instance.getStates();
+
     if (stateChanged && this.trigger) {
         this.trigger.trigger();
     }
+
+    this.validateSiblings();
 
     _.each(this.states, function(state) {
         console.log("Validating child state '%s'", state.id);
@@ -150,6 +169,8 @@ FluidState.prototype.deactivate = function() {
     var stateChanged = this.active;
 
     this.active = false;
+
+    stateChanged && this.instance.getStates();
 
     if (stateChanged && this.trigger) {
         this.trigger.trigger();
@@ -174,9 +195,7 @@ FluidState.prototype.getSiblings = function() {
 FluidState.prototype.addRule = function(id, rule) {
     var self = this;
 
-    if (!rule) {
-        return _.find(this.rules, {id: id});
-    };
+    if (!rule) return self;
 
     console.log("Adding rule '%s' to state '%s'", id, self.id);
 
