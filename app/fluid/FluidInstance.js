@@ -4,16 +4,16 @@ function FluidInstance(id, data, $rootScope, $parse) {
 
     this.settings = {
         regex: {
-            TRIGGER: /^@?[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
-            TRIGGER_STATE: /^@[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
-            TRIGGER_PROPERTY: /^[a-zA-Z_$][0-9a-zA-Z_$\.]*$/
+            TRIGGER: /@?[a-zA-Z_$][0-9a-zA-Z_$\.]*/g,
+            TRIGGER_STATE: /@[a-zA-Z_$][0-9a-zA-Z_$\.]*/g,
+            TRIGGER_PROPERTY: /[a-zA-Z_$][0-9a-zA-Z_$\.]*/g
         }
     }
 
-    this.components = {
+    this.types = {
         triggers: [
             {
-                type: 'state',
+                name: 'state',
                 regex: /^@[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
                 link: function(trigger) {
                     var id = trigger.id.slice(1);
@@ -23,7 +23,7 @@ function FluidInstance(id, data, $rootScope, $parse) {
                 }
             },
             {
-                type: 'property',
+                name: 'property',
                 regex: /^[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
                 link: function(trigger) {
                     var id = trigger.id;
@@ -38,13 +38,13 @@ function FluidInstance(id, data, $rootScope, $parse) {
                 }
             },
             {
-                type: 'default',
+                name: 'default',
                 regex: /^@?[a-zA-Z_$][0-9a-zA-Z_$\.]*$/
             }
         ],
         trigger: function(trigger) {
-            return _.find(self.components.triggers, function(triggerComponent) {
-                return triggerComponent.regex.test(trigger.id);
+            return _.find(self.types.triggers, function(triggerType) {
+                return triggerType.regex.test(trigger.id);
             });
         }
     }
@@ -58,6 +58,8 @@ function FluidInstance(id, data, $rootScope, $parse) {
     this.state = {};
 
     this.triggers = [];
+
+    this.rules = [];
 
     this.getStates = function() {
         var state = self.state;
@@ -104,6 +106,8 @@ function FluidInstance(id, data, $rootScope, $parse) {
     this.getState = function(id) {
         if (id == null) return self;
 
+        var id = id.replace(/^@?/, '');
+
         var stateResults = self.allStates.filter(function(state) {
             return state.id === id;
         });
@@ -137,15 +141,62 @@ function FluidInstance(id, data, $rootScope, $parse) {
         return self;
     }
 
+    this.addTriggers = function(ids, state) {
+        var self = this;
+
+        _.each(ids, function(id) {
+            self.addTrigger(id, state);
+        });
+    }
+
     this.getTrigger = function(id) {
         return _.find(self.triggers, function(trigger) {
             return trigger.id === id;
         });
     }
 
+    this.addRule = function(id, rule, state) {
+        if (!id.length) return;
+
+        var self = this;
+
+        var fluidRule;
+
+        var ruleId = [state.id, id].join('|');
+
+        if (!this.getRule(ruleId)) {
+            fluidRule = new FluidRule(ruleId, rule, self);
+
+            self.rules.push(fluidRule);
+        } else {
+            fluidRule = this.getRule(ruleId)
+        }
+
+        self.addTriggers(fluidRule.triggers, state);
+
+        return fluidRule;
+    }
+
+    this.getRule = function(id) {
+        return _.find(self.rules, function(rule) {
+            return rule.id === id;
+        });
+    }
+
     this.parse = function(rule) {
+        var rule = rule.replace(self.settings.regex.TRIGGER_STATE, function parseStateReplace(match) {
+            return self.isActive(match);
+        }, 'g');
+
         console.log("Parsing rule '%s'", rule);
+
         return $parse(rule)($rootScope.fl[this.id]);
+    }
+
+    this.isActive = function(id) {
+        var state = self.getState(id);
+
+        return state.active;
     }
 
     var initialize = function() {

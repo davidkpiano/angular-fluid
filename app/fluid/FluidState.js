@@ -1,5 +1,5 @@
 // Constructor for FluidState
-function FluidState(id, rule, fluidInstance) {
+function FluidState(id, rule, instance) {
     var self = this;
 
     this.meta = {};
@@ -12,7 +12,7 @@ function FluidState(id, rule, fluidInstance) {
 
     this.parallel = this.meta.id.params[0].parallel;
 
-    this.instance = fluidInstance;
+    this.instance = instance;
 
     this.parent = null;
 
@@ -26,20 +26,14 @@ function FluidState(id, rule, fluidInstance) {
 
     this.rules = [];
 
-    this.deactivate = function() {
-        if (!self.active) return true;
-
-        self.active = false;
-    }
-
     this.toggle = function() {
         self[self.active ? 'deactivate' : 'activate']();
     }
 
     var initialize = function() {
-        self.rule('initial', rule);
+        self.addRule('initial', rule);
 
-        fluidInstance.getState(self.meta.id.parent).addState(self);
+        instance.getState(self.meta.id.parent).addState(self);
     }
 
     initialize();
@@ -134,7 +128,32 @@ FluidState.prototype.validate = function() {
 FluidState.prototype.activate = function() {
     console.log("Activating state '%s'", this.id);
 
+    var stateChanged = !this.active;
+
     this.active = true;
+
+    if (stateChanged && this.trigger) {
+        this.trigger.trigger();
+    }
+
+    _.each(this.states, function(state) {
+        console.log("Validating child state '%s'", state.id);
+        state.validate();
+    });
+
+    return this;
+}
+
+FluidState.prototype.deactivate = function() {
+    console.log("Deactivating state '%s'", this.id);
+
+    var stateChanged = this.active;
+
+    this.active = false;
+
+    if (stateChanged && this.trigger) {
+        this.trigger.trigger();
+    }
 
     _.each(this.states, function(state) {
         console.log("Validating child state '%s'", state.id);
@@ -152,16 +171,20 @@ FluidState.prototype.getSiblings = function() {
     });
 }
 
-FluidState.prototype.rule = function(id, rule) {
+FluidState.prototype.addRule = function(id, rule) {
+    var self = this;
+
     if (!rule) {
         return _.find(this.rules, {id: id});
     };
 
-    var rule = new FluidRule(id, rule, this);
+    console.log("Adding rule '%s' to state '%s'", id, self.id);
 
-    this.rules.push(rule);
+    var fluidRule = this.instance.addRule(id, rule, self);
 
-    return this;
+    self.rules.push(fluidRule);
+
+    return self;
 }
 
 FluidState.prototype.setTrigger = function(trigger) {

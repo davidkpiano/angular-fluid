@@ -31,11 +31,9 @@ function FluidTrigger(id, instance) {
             console.error("Invalid trigger ID: '%s'", id);
         }
 
-        var triggerComponent = instance.components.trigger(self);
+        self.type = instance.types.trigger(self);
 
-        self.type = triggerComponent.type;
-
-        triggerComponent.link(self);
+        self.type.link(self);
     };
 
     init();

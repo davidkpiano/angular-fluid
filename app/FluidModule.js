@@ -29,15 +29,12 @@ angular.module('FluidApp')
             return self.user && self.user.length > 6;
         });
 
-        FL.createState('passValid', 'pass')
-            .rule('length', function() {
+        FL.createState('passValid', 'pass && @user.valid')
+            .addRule('length', function() {
                 return self.pass && self.pass.length;
             });
 
-        FL.createState('formValid', 'user && pass')
-            .rule('valid', function() {
-                return FL.getState('user.valid').active && FL.getState('passValid').active;
-            });
+        FL.createState('formValid', '@user.valid && @passValid');
     }]);
 
 
