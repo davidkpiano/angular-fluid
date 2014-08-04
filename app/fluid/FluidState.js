@@ -24,9 +24,6 @@ function FluidState(id, rule, instance) {
 
     this.active = false;
 
-    // Marker for whether a state should be manually activated
-    this.manual = false;
-
     this.rules = [];
 
     this.toggle = function() {
@@ -34,8 +31,6 @@ function FluidState(id, rule, instance) {
     }
 
     var initialize = function() {
-        self.manual = (rule === null);
-
         rule && self.addRule('initial', rule);
 
         console.log(self.meta.id.parent);
@@ -50,8 +45,6 @@ FluidState.prototype.addTrigger = function(property) {
     console.log("Adding trigger for '%s'", property);
 
     this.instance.addTrigger(property, this);
-
-    // this.triggers.push(property);
 }
 
 FluidState.prototype.parseId = function(id) {
@@ -119,9 +112,9 @@ FluidState.prototype.validate = function() {
         valid = valid && rule.validate();
     });
 
-    if (valid && !this.manual) {
+    if (valid) {
         this.activate();
-    } else if (!valid) {
+    } else {
         this.deactivate();
     }
 }

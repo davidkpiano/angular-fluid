@@ -13,7 +13,7 @@
             <div class="alert light" ng-show="login.ui.login.status.loading">Logging in...</div>
             <div class="alert success" ng-show="login.ui.login.status.loaded">Logged in!</div>
             <div class="alert failure" ng-show="login.ui.login.status.error">Incorrect credentials.</div>
-            
+
             <div class="field">
                 <label>Username</label>
                 <input type="text" name="" id="" ng-model="login.user">
@@ -23,7 +23,7 @@
                 <input type="text" name="" id="" ng-model="login.pass">
             </div>
             <div class="field clearfix">
-                <button class="right" ng-click="login.login()" ng-disabled="!login.ui.login.formValid">Login</button>
+                <button class="right" ng-click="login.login()" ng-disabled="!login.ui.login.form.canLogin">Login</button>
                 <span ng-show="login.ui.login.formValid">you can login!</span>
             </div>
             <pre>{{login.ui | json}}</pre>

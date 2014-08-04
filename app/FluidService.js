@@ -13,7 +13,19 @@ angular.module('FluidApp')
         // }
 
         this.register = function(id, data) {
-            return new FluidInstance(id, reference(id, data), $rootScope, $parse);
+            return (function() {
+                var fluidInstance = new FluidInstance(id, reference(id, data), $rootScope, $parse);
+
+                var fluid = function(state, rule) {
+                    return fluidInstance.createState(state, rule);
+                };
+
+                _.forIn(fluidInstance, function(value, key) {
+                    fluid[key] = value;
+                });
+
+                return fluid;
+            })();
         }
 
         var reference = function(id, data) {

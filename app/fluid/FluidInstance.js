@@ -1,12 +1,13 @@
+
 // Constructor for FluidInstance
 function FluidInstance(id, data, $rootScope, $parse) {
     var self = this;
 
     this.settings = {
         regex: {
-            TRIGGER: /@?[a-zA-Z_$][0-9a-zA-Z_$\.]*/g,
-            TRIGGER_STATE: /@[a-zA-Z_$][0-9a-zA-Z_$\.]*/g,
-            TRIGGER_PROPERTY: /[a-zA-Z_$][0-9a-zA-Z_$\.]*/g
+            TRIGGER: /@?[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g,
+            TRIGGER_STATE: /@[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g,
+            TRIGGER_PROPERTY: /[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g
         }
     }
 
@@ -14,7 +15,7 @@ function FluidInstance(id, data, $rootScope, $parse) {
         triggers: [
             {
                 name: 'state',
-                regex: /^@[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
+                regex: /^@[a-zA-Z_$][0-9a-zA-Z_$\.\:]*$/,
                 link: function(trigger) {
                     var id = trigger.id.slice(1);
 
@@ -24,7 +25,7 @@ function FluidInstance(id, data, $rootScope, $parse) {
             },
             {
                 name: 'property',
-                regex: /^[a-zA-Z_$][0-9a-zA-Z_$\.]*$/,
+                regex: /^[a-zA-Z_$][0-9a-zA-Z_$\.\:]*$/,
                 link: function(trigger) {
                     var id = trigger.id;
 

@@ -26,23 +26,25 @@ angular.module('FluidApp')
                 });
         }
 
-        FL.createState('user', 'user');
+        FL('user', 'user');
 
-        FL.createState('user.valid', function() {
+        FL('user.valid', function() {
             return self.user && self.user.length >= 5;
         });
 
-        FL.createState('passValid', 'pass && @user.valid')
+        FL('passValid', 'pass && @user.valid')
             .addRule('length', function() {
                 return self.pass && self.pass.length;
             });
 
-        FL.createState('formValid', '@user.valid && @passValid');
+        FL('status');
+        FL('status.loading');
+        FL('status.loaded');
+        FL('status.error');
 
-        FL.createState('status');
-        FL.createState('status.loading');
-        FL.createState('status.loaded');
-        FL.createState('status.error');
+        FL('form', 'user && pass');
+        FL('form:valid', '@user.valid && @passValid');
+        FL('form:canLogin', '@form:valid && !@status.loading');
     }]);
 
 
@@ -51,8 +53,8 @@ angular.module('FluidApp')
         var self = this;
 
         var credentials = {
-            user: 'foofoo',
-            pass: 'bar'
+            user: 'username',
+            pass: 'password'
         };
 
         self.login = function(user, pass) {
