@@ -146,52 +146,41 @@ FluidState.prototype.validateSiblings = function() {
     }
 }
 
-FluidState.prototype.activate = function() {
+FluidState.prototype.activate = function(active) {
     var self = this;
 
-    console.log("Activating state '%s'", this.id);
+    var active = active === false ? false : true;
 
-    var stateChanged = !this.active;
+    console.log("%sctivating state '%s'", active ? 'A' : 'Dea', self.id);
 
-    this.active = true;
+    var stateChanged = active ? !self.active : self.active;
 
-    stateChanged && this.instance.getStates();
+    self.active = active;
 
-    if (stateChanged && this.trigger) {
-        this.trigger.trigger();
+    stateChanged && self.instance.getStates();
+
+    if (stateChanged) {
+        self.trigger && self.trigger.trigger();
+        self.notifyListeners();
+        self.instance.refresh();
     }
 
-    this.validateSiblings();
+    active && self.validateSiblings();
 
-    _.each(this.states, function(state) {
+    _.each(self.states, function(state) {
         console.log("Validating child state '%s'", state.id);
         state.validate();
     });
 
-    self.instance.refresh();
-
-    return this;
+    return self;
 }
 
 FluidState.prototype.deactivate = function() {
-    console.log("Deactivating state '%s'", this.id);
+    var self = this;
 
-    var stateChanged = this.active;
+    self.activate(false);
 
-    this.active = false;
-
-    stateChanged && this.instance.getStates();
-
-    if (stateChanged && this.trigger) {
-        this.trigger.trigger();
-    }
-
-    _.each(this.states, function(state) {
-        console.log("Validating child state '%s'", state.id);
-        state.validate();
-    });
-
-    return this;
+    return self;
 }
 
 FluidState.prototype.getSiblings = function() {
@@ -238,6 +227,24 @@ FluidState.prototype.toggle = function(value) {
     }
 
     self.instance.refresh();
+
+    return self;
+}
+
+FluidState.prototype.addListener = function(listener) {
+    var self = this;
+
+    self.listeners.push(listener);
+
+    return self;
+}
+
+FluidState.prototype.notifyListeners = function() {
+    var self = this;
+
+    _.forEach(self.listeners, function(listener) {
+        listener.notify(self.active);
+    });
 
     return self;
 }

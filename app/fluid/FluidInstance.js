@@ -214,11 +214,29 @@ function FluidInstance(id, scope, $parse) {
     }
 
     self.refresh = function() {
-        scope.$apply(self.getStates());
+        // scope.$apply(self.getStates());
+    }
+
+    self.on = function(stateId, activeListener, inactiveListener) {
+        var state = (stateId instanceof FluidState && stateId) || self.getState(stateId);
+
+        var listener = new FluidListener(state, activeListener, inactiveListener);
+
+        return self;
+    }
+
+    self.onRule = function(ruleString, activeListener, inactiveListener) {
+        var state = self.createState(_.uniqueId('_.listener_'), ruleString);
+
+        self.on(state, activeListener, inactiveListener);
+
+        return self;
     }
 
     var initialize = function() {
         self.getStates();
+
+        self.createState('_', true);
     };
 
     initialize();
