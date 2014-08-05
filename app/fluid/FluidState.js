@@ -28,14 +28,25 @@ function FluidState(id, rule, instance) {
 
     this.listeners = [];
 
+    this.element = null;
+
     var initialize = function() {
         instance.getState(self.meta.id.parent).addState(self);
 
+        element = self.parent.element;
+
+        if (element) {
+            console.log("Binding '%s'", self.name);
+            element.bind(self.name, function() {
+                self.activate();
+            });
+        }
 
         if (_.isString(rule) || _.isFunction(rule)) {
             self.addRule('initial', rule);
+        } else if (angular.isElement(rule)) {
+            self.element = rule;
         } else {
-        console.log(rule);
             self.toggle(rule);
         }
     }
@@ -112,6 +123,8 @@ FluidState.prototype.validate = function() {
         valid = valid && rule.validate();
     });
 
+    console.log(valid);
+
     if (valid) {
         this.activate();
     } else {
@@ -134,6 +147,8 @@ FluidState.prototype.validateSiblings = function() {
 }
 
 FluidState.prototype.activate = function() {
+    var self = this;
+
     console.log("Activating state '%s'", this.id);
 
     var stateChanged = !this.active;
@@ -152,6 +167,8 @@ FluidState.prototype.activate = function() {
         console.log("Validating child state '%s'", state.id);
         state.validate();
     });
+
+    self.instance.refresh();
 
     return this;
 }
@@ -219,6 +236,8 @@ FluidState.prototype.toggle = function(value) {
     } else {
         self[!!value ? 'activate' : 'deactivate']();
     }
+
+    self.instance.refresh();
 
     return self;
 }

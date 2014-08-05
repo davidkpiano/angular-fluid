@@ -30,7 +30,7 @@ FluidRule.prototype.parseValidate = function(rule) {
         fluidRule = function() {
             return !!self.instance.parse(rule);
         }
-    };
+    }
 
     return fluidRule;
 }

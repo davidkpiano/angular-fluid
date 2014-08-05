@@ -47,13 +47,12 @@ angular.module('FluidApp')
 
                 scope.ui = UI.state;
 
-                UI('active', false);
+                UI('el', element.find('button'));
 
-                element.find('button').bind('click', function() {
-                    UI.toggle('active');
-                }).bind('blur', function() {
-                    UI.toggle('active', false);
-                });
+                UI('el.focus');
+                UI('el.blur');
+
+                UI('active', '@el.focus');
             }
         }
     });

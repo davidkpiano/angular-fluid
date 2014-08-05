@@ -5,9 +5,9 @@ function FluidInstance(id, scope, $parse) {
 
     self.settings = {
         regex: {
-            TRIGGER: /@?[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g,
-            TRIGGER_STATE: /@[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g,
-            TRIGGER_PROPERTY: /[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g
+            TRIGGER: /@?[a-zA-Z_\$][0-9a-zA-Z_$\.\:]*/g,
+            TRIGGER_STATE: /@[a-zA-Z_\$][0-9a-zA-Z_\$\.\:]*/g,
+            TRIGGER_PROPERTY: /[a-zA-Z_\$][0-9a-zA-Z_\$\.\:]*/g
         }
     }
 
@@ -15,7 +15,7 @@ function FluidInstance(id, scope, $parse) {
         triggers: [
             {
                 name: 'state',
-                regex: /^@[a-zA-Z_$][0-9a-zA-Z_$\.\:]*$/,
+                regex: /^@[a-zA-Z_\$][0-9a-zA-Z_\$\.\:]*$/,
                 link: function(trigger) {
                     var id = trigger.id.slice(1);
 
@@ -25,7 +25,7 @@ function FluidInstance(id, scope, $parse) {
             },
             {
                 name: 'property',
-                regex: /^[a-zA-Z_$][0-9a-zA-Z_$\.\:]*$/,
+                regex: /^[a-zA-Z_\$][0-9a-zA-Z\$\.\:]*$/,
                 link: function(trigger) {
                     console.log("Adding $watch for trigger '%s'", id);
 
@@ -37,7 +37,7 @@ function FluidInstance(id, scope, $parse) {
             },
             {
                 name: 'default',
-                regex: /^@?[a-zA-Z_$][0-9a-zA-Z_$\.]*$/
+                regex: /^@?[a-zA-Z_\$][0-9a-zA-Z_\$\.]*$/
             }
         ],
         trigger: function(trigger) {
@@ -151,6 +151,16 @@ function FluidInstance(id, scope, $parse) {
         });
     }
 
+    self.trigger = function(id) {
+        var self = this;
+
+        var trigger = self.getTrigger(id);
+
+        trigger && trigger.trigger();
+
+        return self;
+    }
+
     self.addRule = function(id, rule, state) {
         if (!id.length) return;
 
@@ -200,9 +210,11 @@ function FluidInstance(id, scope, $parse) {
 
         state && state.toggle(value);
 
-        scope.$apply(self.getStates());
-
         return self;
+    }
+
+    self.refresh = function() {
+        scope.$apply(self.getStates());
     }
 
     var initialize = function() {

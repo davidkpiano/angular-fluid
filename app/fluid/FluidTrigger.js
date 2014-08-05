@@ -22,12 +22,12 @@ function FluidTrigger(id, instance) {
         _.forEach(self.states, function(state) {
             state.validate();
         });
+
+        instance.getStates();
     }
 
     var init = function() {
-        var regex = instance.settings.regex;
-
-        if (!regex.TRIGGER.test(id)) {
+        if (!instance.types.trigger(self)) {
             console.error("Invalid trigger ID: '%s'", id);
         }
 
