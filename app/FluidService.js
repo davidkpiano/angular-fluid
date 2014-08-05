@@ -13,30 +13,47 @@ angular.module('FluidApp')
         // }
 
         this.register = function(id, data) {
-            return (function() {
-                var fluidInstance = new FluidInstance(id, reference(id, data), $rootScope, $parse);
+            var fluidInstance = new FluidInstance(id, reference(id, data), $parse);
 
-                var fluid = function(state, rule) {
-                    return fluidInstance.createState(state, rule);
-                };
+            var fluid = function(state, rule) {
+                return fluidInstance.createState(state, rule);
+            };
 
-                _.forIn(fluidInstance, function(value, key) {
-                    fluid[key] = value;
-                });
+            _.forIn(fluidInstance, function(value, key) {
+                fluid[key] = value;
+            });
 
-                return fluid;
-            })();
+            return fluid;
         }
 
         var reference = function(id, data) {
-            if (data) {
-                $rootScope.fl[id] = data;
-            }
+            var scope = $rootScope.$new();
 
-            return data || null;
+            scope[id] = data;
+
+            return scope;
         }
-
-        $rootScope.fl = {};
-
-        // this.states = fl.states;
     }]);
+
+
+angular.module('FluidApp')
+    .directive('dropdownContainer', function(FluidService) {
+        return {
+            restrict: 'C',
+            replace: false,
+            scope: true,
+            link: function(scope, element, attrs) {
+                var UI = FluidService.register('dropdown');
+
+                scope.ui = UI.state;
+
+                UI('active', false);
+
+                element.find('button').bind('click', function() {
+                    UI.toggle('active');
+                }).bind('blur', function() {
+                    UI.toggle('active', false);
+                });
+            }
+        }
+    });

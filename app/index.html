@@ -22,13 +22,35 @@
                 <label>Password</label>
                 <input type="text" name="" id="" ng-model="login.pass">
             </div>
+            <div class="dropdown-container">
+                <button>Dropdown</button>
+                <nav class="dropdown" ng-show="ui.dropdown.active">
+                    <ul>
+                        <li><a href="">Item 1</a></li>
+                        <li><a href="">Item 2</a></li>
+                        <li><a href="">Item 3</a></li>
+                    </ul>
+                </nav>
+            </div>
             <div class="field clearfix">
                 <button class="right" ng-click="login.login()" ng-disabled="!login.ui.login.form.canLogin">Login</button>
                 <span ng-show="login.ui.login.formValid">you can login!</span>
             </div>
-            <button ng-click="login.foo()">Stuff</button>
 
-            <pre>{{login.ui | json}}</pre>
+            <pre class="small">{{login.ui | json}}</pre>
+            
+            <div class="dropdown-container">
+                <button>Dropdown</button>
+                <nav class="dropdown" ng-show="ui.dropdown.active">
+                    <ul>
+                        <li><a href="">Item 1</a></li>
+                        <li><a href="">Item 2</a></li>
+                        <li><a href="">Item 3</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+
         </div>
     </div>
 </body>

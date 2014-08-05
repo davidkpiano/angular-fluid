@@ -1,6 +1,6 @@
 
 // Constructor for FluidInstance
-function FluidInstance(id, data, $rootScope, $parse) {
+function FluidInstance(id, scope, $parse) {
     var self = this;
 
     self.settings = {
@@ -27,12 +27,9 @@ function FluidInstance(id, data, $rootScope, $parse) {
                 name: 'property',
                 regex: /^[a-zA-Z_$][0-9a-zA-Z_$\.\:]*$/,
                 link: function(trigger) {
-                    var id = trigger.id;
-
                     console.log("Adding $watch for trigger '%s'", id);
 
-                    $rootScope.$watch(['fl', self.id, id].join('.'), function(a, b) {
-                        console.log("old: %s, new: %s", a, b);
+                    scope.$watch([self.id, trigger.id].join('.'), function(a, b) {
                         trigger.trigger();
                         self.getStates();
                     });
@@ -62,6 +59,8 @@ function FluidInstance(id, data, $rootScope, $parse) {
 
     self.rules = [];
 
+    self.scope = scope;
+
     self.getStates = function() {
         self.state[self.id] = simplifyState(self);
 
@@ -72,9 +71,9 @@ function FluidInstance(id, data, $rootScope, $parse) {
 
             if ((state instanceof FluidState) && !state.active) return false;
 
-            if (!state.states.length) return true;
-
-            if (_.every(state.states, {active: false})) return state.active;
+            if (_.every(state.states, {active: false})) {
+                return state instanceof FluidState ? state.active : false;
+            }
 
             _.forEach(state.states, function(state) {
                 simpleStates[state.name] = simplifyState(state)
@@ -87,7 +86,7 @@ function FluidInstance(id, data, $rootScope, $parse) {
     self.createState = function(id, rule) {
         console.log("Creating state '%s'", id);
 
-        var rule = rule || null;
+        var rule = rule || false;
 
         var state = new FluidState(id, rule, self);
 
@@ -185,13 +184,25 @@ function FluidInstance(id, data, $rootScope, $parse) {
 
         console.log("Parsing rule '%s'", rule);
 
-        return $parse(rule)($rootScope.fl[self.id]);
+        return $parse(rule)(scope[self.id]);
     }
 
     self.isActive = function(id) {
         var state = self.getState(id);
 
         return state.active;
+    }
+
+    self.toggle = function(stateId, value) {
+        var state = self.getState(stateId);
+
+        console.log("Toggling state '%s'", stateId);
+
+        state && state.toggle(value);
+
+        scope.$apply(self.getStates());
+
+        return self;
     }
 
     var initialize = function() {

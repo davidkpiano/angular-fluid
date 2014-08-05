@@ -26,16 +26,18 @@ function FluidState(id, rule, instance) {
 
     this.rules = [];
 
-    this.toggle = function() {
-        self[self.active ? 'deactivate' : 'activate']();
-    }
+    this.listeners = [];
 
     var initialize = function() {
-        rule && self.addRule('initial', rule);
-
-        console.log(self.meta.id.parent);
-
         instance.getState(self.meta.id.parent).addState(self);
+
+
+        if (_.isString(rule) || _.isFunction(rule)) {
+            self.addRule('initial', rule);
+        } else {
+        console.log(rule);
+            self.toggle(rule);
+        }
     }
 
     initialize();
@@ -70,8 +72,6 @@ FluidState.prototype.parseId = function(id) {
             parent: true
         }
     ];
-
-    console.log(idData.params);
 
     idData.parent = idData.params
         .splice(0, idData.params.length - 1)
@@ -180,6 +180,8 @@ FluidState.prototype.deactivate = function() {
 FluidState.prototype.getSiblings = function() {
     var self = this;
 
+    console.log(this);
+
     return _.reject(this.parent.states, function(state) {
         return state == self;
     });
@@ -205,4 +207,18 @@ FluidState.prototype.setTrigger = function(trigger) {
     if (trigger instanceof FluidTrigger) {
         self.trigger = trigger;
     }
+
+    return self;
+}
+
+FluidState.prototype.toggle = function(value) {
+    var self = this;
+
+    if (value === undefined) {
+        self[self.active ? 'deactivate' : 'activate']();
+    } else {
+        self[!!value ? 'activate' : 'deactivate']();
+    }
+
+    return self;
 }
