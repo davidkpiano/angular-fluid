@@ -3,7 +3,7 @@
 function FluidInstance(id, data, $rootScope, $parse) {
     var self = this;
 
-    this.settings = {
+    self.settings = {
         regex: {
             TRIGGER: /@?[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g,
             TRIGGER_STATE: /@[a-zA-Z_$][0-9a-zA-Z_$\.\:]*/g,
@@ -11,7 +11,7 @@ function FluidInstance(id, data, $rootScope, $parse) {
         }
     }
 
-    this.types = {
+    self.types = {
         triggers: [
             {
                 name: 'state',
@@ -50,45 +50,41 @@ function FluidInstance(id, data, $rootScope, $parse) {
         }
     }
 
-    this.id = id;
+    self.id = id;
 
-    this.allStates = [];
+    self.allStates = [];
 
-    this.states = [];
+    self.states = [];
 
-    this.state = {};
+    self.state = {};
 
-    this.triggers = [];
+    self.triggers = [];
 
-    this.rules = [];
+    self.rules = [];
 
-    this.getStates = function() {
-        var state = self.state;
+    self.getStates = function() {
+        self.state[self.id] = simplifyState(self);
 
-        state[self.id] = simplifyState(self);
-
-        return (state);
+        return (self.state);
 
         function simplifyState(state) {
-            var states = {};
-
-            var allStatesInactive = true;
+            var simpleStates = {};
 
             if ((state instanceof FluidState) && !state.active) return false;
 
             if (!state.states.length) return true;
 
+            if (_.every(state.states, {active: false})) return state.active;
+
             _.forEach(state.states, function(state) {
-                var simpleState = simplifyState(state);
-                allStatesInactive = allStatesInactive && !simpleState;
-                states[state.name] = simpleState;
+                simpleStates[state.name] = simplifyState(state)
             });
 
-            return allStatesInactive ? false : states;
+            return simpleStates;
         }
     }
 
-    this.createState = function(id, rule) {
+    self.createState = function(id, rule) {
         console.log("Creating state '%s'", id);
 
         var rule = rule || null;
@@ -100,13 +96,13 @@ function FluidInstance(id, data, $rootScope, $parse) {
         return state;
     }
 
-    this.addState = function(state) {
-        this.states.push(state);
+    self.addState = function(state) {
+        self.states.push(state);
 
-        state.parent = this;
+        state.parent = self;
     }
 
-    this.getState = function(id) {
+    self.getState = function(id) {
         if (id == null) return self;
 
         var id = id.replace(/^@?/, '');
@@ -124,14 +120,14 @@ function FluidInstance(id, data, $rootScope, $parse) {
         return stateResults[0];
     }
 
-    this.addTrigger = function(id, state) {
+    self.addTrigger = function(id, state) {
         if (!id.length) return;
 
         if (id == '&&' || id == '||') return;
 
         console.log("Adding trigger '%s' for state '%s'", id, state.id);
 
-        var trigger = this.getTrigger(id);
+        var trigger = self.getTrigger(id);
 
         if (!trigger) {
             trigger = new FluidTrigger(id, self);
@@ -144,35 +140,31 @@ function FluidInstance(id, data, $rootScope, $parse) {
         return self;
     }
 
-    this.addTriggers = function(ids, state) {
-        var self = this;
-
+    self.addTriggers = function(ids, state) {
         _.each(ids, function(id) {
             self.addTrigger(id, state);
         });
     }
 
-    this.getTrigger = function(id) {
+    self.getTrigger = function(id) {
         return _.find(self.triggers, function(trigger) {
             return trigger.id === id;
         });
     }
 
-    this.addRule = function(id, rule, state) {
+    self.addRule = function(id, rule, state) {
         if (!id.length) return;
-
-        var self = this;
 
         var fluidRule;
 
         var ruleId = [state.id, id].join('|');
 
-        if (!this.getRule(ruleId)) {
+        if (!self.getRule(ruleId)) {
             fluidRule = new FluidRule(ruleId, rule, self);
 
             self.rules.push(fluidRule);
         } else {
-            fluidRule = this.getRule(ruleId)
+            fluidRule = self.getRule(ruleId)
         }
 
         self.addTriggers(fluidRule.triggers, state);
@@ -180,23 +172,23 @@ function FluidInstance(id, data, $rootScope, $parse) {
         return fluidRule;
     }
 
-    this.getRule = function(id) {
+    self.getRule = function(id) {
         return _.find(self.rules, function(rule) {
             return rule.id === id;
         });
     }
 
-    this.parse = function(rule) {
+    self.parse = function(rule) {
         var rule = rule.replace(self.settings.regex.TRIGGER_STATE, function parseStateReplace(match) {
             return self.isActive(match);
         }, 'g');
 
         console.log("Parsing rule '%s'", rule);
 
-        return $parse(rule)($rootScope.fl[this.id]);
+        return $parse(rule)($rootScope.fl[self.id]);
     }
 
-    this.isActive = function(id) {
+    self.isActive = function(id) {
         var state = self.getState(id);
 
         return state.active;

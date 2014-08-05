@@ -26,6 +26,8 @@
                 <button class="right" ng-click="login.login()" ng-disabled="!login.ui.login.form.canLogin">Login</button>
                 <span ng-show="login.ui.login.formValid">you can login!</span>
             </div>
+            <button ng-click="login.foo()">Stuff</button>
+
             <pre>{{login.ui | json}}</pre>
         </div>
     </div>
