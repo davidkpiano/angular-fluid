@@ -5,8 +5,16 @@ module.exports = function(grunt) {
             all: ['Gruntfile.js', 'app.js']
         },
         jasmine: {
-            src: ['assets/js/*.js', 'app/*.js', 'app/fluid/*.js'],
+            src: [
+                'app/*.js',
+                'app/fluid/*.js'
+            ],
             options: {
+                vendor: [
+                    'assets/js/lodash.min.js',
+                    'assets/js/angular.min.js',
+                    'assets/js/angular-mocks.js'
+                ],
                 specs: 'spec/*Spec.js'
             }
         }

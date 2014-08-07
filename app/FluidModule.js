@@ -8,43 +8,45 @@ angular.module('FluidApp')
 
         var FL = window.FL = FluidService.register('login', self);
 
-        self.ui = FL.state;
+        self.ui = FL.state();
 
         self.login = function() {
-            FL.getState('user.valid').validate();
+            FL.state('user.valid').validate();
 
-            FL.getState('status').activate();
-            FL.getState('status.loading').activate();
+            FL.state('status').activate();
+            FL.state('status.loading').activate();
 
             LoginService.login(self.user, self.pass)
                 .then(function(data) {
-                    FL.getState('status.loaded').activate();
+                    FL.state('status.loaded').activate();
                 },
 
                 function(data) {
-                    FL.getState('status.error').activate();
+                    FL.state('status.error').activate();
                 });
         }
 
-        FL('user', 'user');
+        FL.state('user', 'user');
 
-        FL('user.valid', function() {
+        FL.state('user.valid', function() {
             return self.user && self.user.length >= 5;
         });
 
-        FL('passValid', 'pass && @user.valid')
+        FL.state('passValid', 'pass && @user.valid')
             .addRule('length', function() {
                 return self.pass && self.pass.length;
             });
 
-        FL('status');
-        FL('status.loading');
-        FL('status.loaded');
-        FL('status.error');
+        FL.state('status', true);
+        FL.state('status.loading', false);
+        FL.state('status.loaded', false);
+        FL.state('status.error', false);
 
-        FL('form', 'user && pass');
-        FL('form:valid', '@user.valid && @passValid');
-        FL('form:canLogin', '@form:valid && !@status.loading');
+        FL.state('form', 'user && pass');
+        FL.state('form:valid', '@user.valid && @passValid');
+        FL.state('form:canLogin', '@form:valid && !@status.loading');
+
+        FL.onRule('@form:canLogin', function() {});
     }]);
 
 

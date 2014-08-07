@@ -2,53 +2,38 @@
 function FluidState(id, rule, instance) {
     var self = this;
 
-    this.meta = {};
+    self.meta = {};
 
-    this.id = id;
+    self.id = id;
 
-    this.meta.id = this.parseId(this.id);
+    self.meta.id = self.parseId(self.id);
 
-    this.name = this.meta.id.name;
+    self.name = self.meta.id.name;
 
-    this.parallel = this.meta.id.params[0].parallel;
+    self.parallel = self.meta.id.params[0].parallel;
 
-    this.instance = instance;
+    self.instance = instance;
 
-    this.parent = null;
+    self.parent = null;
 
-    this.states = [];
+    self.states = [];
 
-    this.triggers = [];
+    self.triggers = [];
 
-    this.trigger = null;
+    self.trigger = null;
 
-    this.active = false;
+    self.active = false;
 
-    this.rules = [];
+    self.rules = [];
 
-    this.listeners = [];
+    self.listeners = [];
 
-    this.element = null;
+    // self.element = null;
 
     var initialize = function() {
         instance.getState(self.meta.id.parent).addState(self);
 
-        element = self.parent.element;
-
-        if (element) {
-            console.log("Binding '%s'", self.name);
-            element.bind(self.name, function() {
-                self.activate();
-            });
-        }
-
-        if (_.isString(rule) || _.isFunction(rule)) {
-            self.addRule('initial', rule);
-        } else if (angular.isElement(rule)) {
-            self.element = rule;
-        } else {
-            self.toggle(rule);
-        }
+        self.addRule('initial', rule);
     }
 
     initialize();
@@ -115,15 +100,15 @@ FluidState.prototype.validate = function() {
     // Check rules
     var rules = this.rules;
 
-    if (!rules.length) return true;
-
     var valid = true;
+
+    if (!rules.length) {
+        valid = _.some(self.states, {active: true});
+    }
 
     _.forEach(rules, function(rule) {
         valid = valid && rule.validate();
     });
-
-    console.log(valid);
 
     if (valid) {
         this.activate();
@@ -186,8 +171,6 @@ FluidState.prototype.deactivate = function() {
 FluidState.prototype.getSiblings = function() {
     var self = this;
 
-    console.log(this);
-
     return _.reject(this.parent.states, function(state) {
         return state == self;
     });
@@ -196,11 +179,21 @@ FluidState.prototype.getSiblings = function() {
 FluidState.prototype.addRule = function(id, rule) {
     var self = this;
 
-    if (!rule) return self;
+    var fluidRule;
 
-    console.log("Adding rule '%s' to state '%s'", id, self.id);
+    if (rule === undefined) return self;
 
-    var fluidRule = this.instance.addRule(id, rule, self);
+    if (rule instanceof FluidRule) {
+        fluidRule = rule;
+    } else if (_.isString(rule) || _.isFunction(rule)) {
+        fluidRule = self.instance.addRule(id, rule, self);
+    } else if (angular.isElement(rule)) {
+        return (self.addElement(rule), self);
+    } else {
+        return (self.toggle(rule), self);
+    }
+
+    console.log("Adding rule '%s' to state '%s'", fluidRule.id, self.id);
 
     self.rules.push(fluidRule);
 

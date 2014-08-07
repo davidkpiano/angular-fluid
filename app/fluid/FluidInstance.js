@@ -53,7 +53,7 @@ function FluidInstance(id, scope, $parse) {
 
     self.states = [];
 
-    self.state = {};
+    self._state = {};
 
     self.triggers = [];
 
@@ -66,7 +66,7 @@ function FluidInstance(id, scope, $parse) {
     var initialize = function() {
         self.getStates();
 
-        self.createState('_', true);
+        self.createState('_');
     };
 
     initialize();
@@ -75,9 +75,9 @@ function FluidInstance(id, scope, $parse) {
 FluidInstance.prototype.getStates = function() {
     var self = this;
 
-    self.state[self.id] = simplifyState(self);
+    self._state[self.id] = simplifyState(self);
 
-    return (self.state);
+    return (self._state);
 
     function simplifyState(state) {
         var simpleStates = {};
@@ -94,6 +94,20 @@ FluidInstance.prototype.getStates = function() {
 
         return simpleStates;
     }
+}
+
+FluidInstance.prototype.state = function(id, rule) {
+    var self = this;
+
+    if (id === undefined) {
+        return self._state;
+    }
+
+    if (rule === undefined) {
+        return self.getState(id);
+    }
+        
+    return self.createState(id, rule);
 }
 
 FluidInstance.prototype.createState = function(id, rule) {

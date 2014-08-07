@@ -7,18 +7,12 @@ angular.module('FluidApp')
         this.register = function(id, data) {
             var fluidInstance = new FluidInstance(id, reference(id, data), $parse);
 
-            var fluid = function(state, rule) {
-                return fluidInstance.createState(state, rule);
-            };
-
-            _.forIn(fluidInstance, function(value, key) {
-                fluid[key] = value;
-            });
-
-            return fluid;
+            return fluidInstance;
         }
 
         var reference = function(id, data) {
+            if (!data) return null;
+
             var scope = $rootScope.$new();
 
             scope[id] = data;
@@ -35,16 +29,18 @@ angular.module('FluidApp')
             replace: false,
             scope: true,
             link: function(scope, element, attrs) {
-                var UI = FluidService.register('dropdown');
+                var UI = window.UI = FluidService.register('dropdown', scope);
 
-                scope.ui = UI.state;
+                scope.ui = UI.state();
 
-                UI('el', element.find('button'));
+                UI.state('active', false);
 
-                UI('el.focus');
-                UI('el.blur');
+                console.log('-----');
+                console.log(UI.state('active'));
 
-                UI('active', '@el.focus');
+                element.on('click', function() {
+                    UI.state('active').toggle();
+                });
             }
         }
     });
