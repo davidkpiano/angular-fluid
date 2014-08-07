@@ -37,7 +37,7 @@ angular.module('FluidApp')
                 return self.pass && self.pass.length;
             });
 
-        FL.state('status', true);
+        FL.state('status', false);
         FL.state('status.loading', false);
         FL.state('status.loaded', false);
         FL.state('status.error', false);

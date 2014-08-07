@@ -75,25 +75,11 @@ function FluidInstance(id, scope, $parse) {
 FluidInstance.prototype.getStates = function() {
     var self = this;
 
-    self._state[self.id] = simplifyState(self);
+    _.forEach(self.states, function(state) {
+        self._state[state.id] = state.simplify();
+    });
 
-    return (self._state);
-
-    function simplifyState(state) {
-        var simpleStates = {};
-
-        if ((state instanceof FluidState) && !state.active) return false;
-
-        if (_.every(state.states, {active: false})) {
-            return state instanceof FluidState ? state.active : false;
-        }
-
-        _.forEach(state.states, function(state) {
-            simpleStates[state.name] = simplifyState(state)
-        });
-
-        return simpleStates;
-    }
+    return self._state;
 }
 
 FluidInstance.prototype.state = function(id, rule) {

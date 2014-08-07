@@ -16,6 +16,8 @@ function FluidState(id, rule, instance) {
 
     self.parent = null;
 
+    self.state = {};
+
     self.states = [];
 
     self.triggers = [];
@@ -240,4 +242,18 @@ FluidState.prototype.notifyListeners = function() {
     });
 
     return self;
+}
+
+FluidState.prototype.simplify = function() {
+    var self = this;
+
+    if (!self.states.length) return self.active;
+
+    if (_.every(self.states, {active: false})) return self.active;
+
+    _.forEach(self.states, function(state) {
+        self.state[state.name] = state.simplify();
+    });
+
+    return self.state;
 }

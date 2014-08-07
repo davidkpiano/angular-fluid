@@ -40,6 +40,7 @@ angular.module('FluidApp')
 
                 element.on('click', function() {
                     UI.state('active').toggle();
+                    UI.getStates();
                 });
             }
         }
