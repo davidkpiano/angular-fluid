@@ -30,9 +30,9 @@ function FluidState(id, rule, instance) {
 
     self.listeners = [];
 
-    // self.element = null;
-
     var initialize = function() {
+        // Add parent state
+        // self.getParent();
         instance.getState(self.meta.id.parent).addState(self);
 
         self.addRule('initial', rule);
@@ -41,10 +41,24 @@ function FluidState(id, rule, instance) {
     initialize();
 }
 
-FluidState.prototype.addTrigger = function(property) {
-    console.log("Adding trigger for '%s'", property);
+FluidState.prototype.getParent = function() {
+    var self = this;
 
-    this.instance.addTrigger(property, this);
+    if (!self.parent instanceof FluidState) {
+        self.instance
+            .getState(self.meta.id.parent)
+            .addState(self);
+    }
+
+    return self.parent;
+}
+
+FluidState.prototype.addTrigger = function(property) {
+    var self = this;
+
+    self.instance.addTrigger(property, self);
+
+    return self;
 }
 
 FluidState.prototype.parseId = function(id) {

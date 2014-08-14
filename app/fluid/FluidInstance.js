@@ -72,6 +72,10 @@ function FluidInstance(id, scope, $parse) {
     initialize();
 }
 
+FluidInstance.prototype.initialize = function() {
+
+}
+
 FluidInstance.prototype.getStates = function() {
     var self = this;
 
@@ -103,11 +107,11 @@ FluidInstance.prototype.createState = function(id, rule) {
 
     var rule = rule || false;
 
-    var state = new FluidState(id, rule, self);
+    var fluidState = new FluidState(id, rule, self);
 
-    self.allStates.push(state);
+    self.allStates.push(fluidState);
 
-    return state;
+    return fluidState;
 }
 
 FluidInstance.prototype.addState = function(state) {
