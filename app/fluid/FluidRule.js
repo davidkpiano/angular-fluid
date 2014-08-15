@@ -1,31 +1,35 @@
 // Constructor for FluidRule
-function FluidRule(id, rule, instance) {
+function FluidRule(rule, state, instance) {
     var self = this;
 
-    this.id = id;
+    self.rule = rule;
 
-    this.validate = null;
+    self.state = state;
 
-    this.triggers = [];
+    self.validate = null;
 
-    this.instance = instance;
+    self.instance = instance;
+}
 
-    var initialize = function() {
-        self.validate = self.parseValidate(rule);
-    }
+FluidRule.prototype.initialize = function() {
+    var self = this;
 
-    initialize();
+    self.validate = self.parseValidate(self.rule);
+
+    return self;
 }
 
 FluidRule.prototype.parseValidate = function(rule) {
     var self = this;
 
-    console.log("Parsing rule '%s'", rule);
-
     var fluidRule = rule;
 
+    var triggers;
+
     if (angular.isString(rule)) {
-        self.triggers = rule.match(self.instance.settings.regex.TRIGGER);
+        triggers = rule.match(self.instance.settings.regex.TRIGGER);
+
+        self.instance.addTriggers(triggers, self.state);
 
         fluidRule = function() {
             return !!self.instance.parse(rule);

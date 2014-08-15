@@ -10,8 +10,6 @@ function FluidState(id, rule, instance) {
 
     self.name = self.meta.id.name;
 
-    self.parallel = self.meta.id.params[0].parallel;
-
     self.instance = instance;
 
     self.parent = null;
@@ -30,15 +28,20 @@ function FluidState(id, rule, instance) {
 
     self.listeners = [];
 
-    var initialize = function() {
-        // Add parent state
-        // self.getParent();
-        instance.getState(self.meta.id.parent).addState(self);
+    self.initialized = false;
 
-        self.addRule('initial', rule);
-    }
+    // Pre-Initialization Steps
+    self.addRule(rule);
+}
 
-    initialize();
+FluidState.prototype.initialize = function() {
+    var self = this;
+
+    // Add parent state
+    // self.getParent();
+    self.instance.getState(self.meta.id.parent).addState(self);
+
+    self.initialized = true;
 }
 
 FluidState.prototype.getParent = function() {
@@ -56,7 +59,13 @@ FluidState.prototype.getParent = function() {
 FluidState.prototype.addTrigger = function(property) {
     var self = this;
 
-    self.instance.addTrigger(property, self);
+    if (_.isArray(property)) {
+        _.each(property, function(currentProperty) {
+            self.addTrigger(property);
+        });
+    } else {
+        self.instance.addTrigger(property, self);
+    }
 
     return self;
 }
@@ -66,21 +75,16 @@ FluidState.prototype.parseId = function(id) {
         id: id,
         parent: null,
         name: null,
-        params: id.match(/([\:\.]?\w+)/g)
+        params: id.match(/([\.]?\w+)/g)
     };
 
     var tagMap = [
         {
-            tag: ':',
-            parallel: true
-        },
-        {
             tag: '.',
-            parallel: false
+            parent: false
         },
         {
             tag: '',
-            parallel: true,
             parent: true
         }
     ];
@@ -133,20 +137,6 @@ FluidState.prototype.validate = function() {
     }
 }
 
-FluidState.prototype.validateSiblings = function() {
-    var siblings = this.getSiblings();
-
-    if (this.parallel) {
-        _.each(_.where(siblings, {parallel: false, active: true}), function(siblingState) {
-            siblingState.deactivate();
-        });
-    } else {
-        _.each(_.where(siblings, {active: true}), function(siblingState) {
-            siblingState.deactivate();
-        });
-    }
-}
-
 FluidState.prototype.activate = function(active) {
     var self = this;
 
@@ -166,8 +156,6 @@ FluidState.prototype.activate = function(active) {
         self.instance.refresh();
     }
 
-    active && self.validateSiblings();
-
     _.each(self.states, function(state) {
         console.log("Validating child state '%s'", state.id);
         state.validate();
@@ -184,15 +172,7 @@ FluidState.prototype.deactivate = function() {
     return self;
 }
 
-FluidState.prototype.getSiblings = function() {
-    var self = this;
-
-    return _.reject(this.parent.states, function(state) {
-        return state == self;
-    });
-}
-
-FluidState.prototype.addRule = function(id, rule) {
+FluidState.prototype.addRule = function(rule) {
     var self = this;
 
     var fluidRule;
@@ -200,16 +180,12 @@ FluidState.prototype.addRule = function(id, rule) {
     if (rule === undefined) return self;
 
     if (rule instanceof FluidRule) {
-        fluidRule = rule;
+        fluidRule = self.instance.addRule(rule.validate, self);
     } else if (_.isString(rule) || _.isFunction(rule)) {
-        fluidRule = self.instance.addRule(id, rule, self);
-    } else if (angular.isElement(rule)) {
-        return (self.addElement(rule), self);
+        fluidRule = self.instance.addRule(rule, self);
     } else {
         return (self.toggle(rule), self);
     }
-
-    console.log("Adding rule '%s' to state '%s'", fluidRule.id, self.id);
 
     self.rules.push(fluidRule);
 

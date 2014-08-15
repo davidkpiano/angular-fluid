@@ -63,17 +63,29 @@ function FluidInstance(id, scope, $parse) {
 
     self.$parse = $parse;
 
-    var initialize = function() {
-        self.getStates();
-
-        self.createState('_');
-    };
-
-    initialize();
+    self.initialized = false;
 }
 
 FluidInstance.prototype.initialize = function() {
+    var self = this;
 
+    // Initialize states
+    _.each(self.allStates, function(fluidState) {
+        fluidState.initialize();
+    });
+
+    // Initialize rules
+    _.each(self.rules, function(fluidRule) {
+        fluidRule.initialize();
+    });
+
+    self.getStates();
+
+    self.createState('_');
+
+    self.initialized = true;
+
+    return self;
 }
 
 FluidInstance.prototype.getStates = function() {
@@ -164,11 +176,11 @@ FluidInstance.prototype.addTrigger = function(id, state) {
     return self;
 }
 
-FluidInstance.prototype.addTriggers = function(ids, state) {
+FluidInstance.prototype.addTriggers = function(triggers, fluidState) {
     var self = this;
 
-    _.each(ids, function(id) {
-        self.addTrigger(id, state);
+    _.each(triggers, function(trigger) {
+        self.addTrigger(trigger, fluidState);
     });
 
     return self;
@@ -192,46 +204,32 @@ FluidInstance.prototype.trigger = function(id) {
     return self;
 }
 
-FluidInstance.prototype.addRule = function(id, rule, state) {
+FluidInstance.prototype.addRule = function(rule, state) {
     var self = this;
-
-    if (!id.length) return;
 
     var fluidRule;
 
-    var ruleId = [state.id, id].join('|');
+    fluidRule = new FluidRule(rule, state, self);
 
-    if (!self.getRule(ruleId)) {
-        fluidRule = new FluidRule(ruleId, rule, self);
-
-        self.rules.push(fluidRule);
-    } else {
-        fluidRule = self.getRule(ruleId)
-    }
-
-    self.addTriggers(fluidRule.triggers, state);
+    self.rules.push(fluidRule);
 
     return fluidRule;
-}
-
-FluidInstance.prototype.getRule = function(id) {
-    var self = this;
-
-    return _.find(self.rules, function(rule) {
-        return rule.id === id;
-    });
 }
 
 FluidInstance.prototype.parse = function(rule) {
     var self = this;
 
-    var rule = rule.replace(self.settings.regex.TRIGGER_STATE, function parseStateReplace(match) {
+    var valid = false;
+
+    var formattedRule = rule.replace(self.settings.regex.TRIGGER_STATE, function parseStateReplace(match) {
         return self.isActive(match);
     }, 'g');
 
-    console.log("Parsing rule '%s'", rule);
+    valid = self.$parse(formattedRule)(self.scope[self.id]);
 
-    return self.$parse(rule)(self.scope[self.id]);
+    console.log("Parsing rule '%s' => '%s' == %s", rule, formattedRule, !!valid);
+
+    return valid;
 }
 
 FluidInstance.prototype.isActive = function(id) {

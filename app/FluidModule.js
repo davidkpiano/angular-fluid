@@ -6,6 +6,7 @@ angular.module('FluidApp')
 
         self.foo = 'bar';
 
+
         var FL = window.FL = FluidService.register('login', self);
 
         self.ui = FL.state();
@@ -32,21 +33,49 @@ angular.module('FluidApp')
             return self.user && self.user.length >= 5;
         });
 
-        FL.state('passValid', 'pass && @user.valid')
-            .addRule('length', function() {
-                return self.pass && self.pass.length;
-            });
+        FL.state('pass', 'pass');
+
+        FL.state('pass.valid', function() {
+            return self.pass && self.pass.length;
+        });
 
         FL.state('status', false);
-        FL.state('status.loading', false);
-        FL.state('status.loaded', false);
-        FL.state('status.error', false);
+        FL.state('status.loading', '!@status.loaded && !@status.error');
+        FL.state('status.loaded', 'status.loading');
+        FL.state('status.error', 'status.loading');
 
         FL.state('form', 'user && pass');
-        FL.state('form:valid', '@user.valid && @passValid');
-        FL.state('form:canLogin', '@form:valid && !@status.loading');
+        FL.state('form.valid', '@user.valid && @passValid');
+        FL.state('form.canLogin', '@form.valid && !@status.loading');
 
-        FL.onRule('@form:canLogin', function() {});
+        FL.initialize();
+    }]);
+
+angular.module('FluidApp')
+    .controller('TrafficController', ['FluidService', '$timeout', function(FluidService, $timeout) {
+        var self = this;
+        var FL = window.traffic = FluidService.register('traffic', self);
+
+        this.ui = FL.state();
+
+        FL.state('go', 'timer && @stop');
+        FL.state('wait', 'timer && @go');
+        FL.state('stop', 'timer && @wait');
+
+        this.timer = false;
+
+        FL.on('go', this.startTimer);
+
+        self.startTimer = function() {
+            console.log('timer set');
+            self.timer = true;
+            
+            $timeout(function() {
+                self.timer = false;
+            }, 2000);
+        }
+
+        FL.initialize();
     }]);
 
 
