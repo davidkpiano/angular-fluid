@@ -1,5 +1,5 @@
 // Constructor for FluidState
-function FluidState(id, rule, instance) {
+function FluidState(id, rule, deterministic, instance) {
     var self = this;
 
     self.meta = {};
@@ -24,6 +24,13 @@ function FluidState(id, rule, instance) {
 
     self.active = false;
 
+    self.deterministic = deterministic || false;
+
+    self.transitions = {
+        from: [],
+        to: []
+    };
+
     self.rules = [];
 
     self.listeners = [];
@@ -41,7 +48,60 @@ FluidState.prototype.initialize = function() {
     // self.getParent();
     self.instance.getState(self.meta.id.parent).addState(self);
 
+    self.initializeTransitions();
+
     self.initialized = true;
+}
+
+// Transitions
+FluidState.prototype.transition = function(direction, states) {
+    var self = this;
+
+    console.log("Adding states '%s' as transition %s '%s'", states.join(', '), direction, self.id);
+
+    self.transitions[direction] = _.union(self.transitions[direction], states);
+
+    console.log(self.transitions);
+
+    return self;
+}
+
+FluidState.prototype.from = function(states) {
+    var self = this;
+
+    var states = Array.prototype.concat.apply([], arguments).slice(1);
+
+    return self.transition('from', states);
+}
+
+FluidState.prototype.to = function(states) {
+    var self = this;
+
+    var states = Array.prototype.concat.apply([], arguments).slice(1);
+
+    return self.transition('to', states);
+}
+
+FluidState.prototype.initializeTransitions = function() {
+    var self = this;
+
+    self.transitions.from = _.map(self.transitions.from, function(fromState) {
+        var fluidState = self.instance.getState(fromState);
+
+        fluidState.to(self);
+
+        return fluidState;
+    });
+
+    self.transitions.to = _.map(self.transitions.to, function(toState) {
+        var fluidState = self.instance.getState(toState);
+
+        fluidState.from(self);
+
+        return fluidState;
+    });
+
+    return self;
 }
 
 FluidState.prototype.getParent = function() {

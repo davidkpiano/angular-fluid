@@ -39,13 +39,16 @@ angular.module('FluidApp')
             return self.pass && self.pass.length;
         });
 
-        FL.state('status', false);
-        FL.state('status.loading', '!@status.loaded && !@status.error');
-        FL.state('status.loaded', 'status.loading');
-        FL.state('status.error', 'status.loading');
+        FL.state('status', false, true);
+        FL.state('status.loading', true)
+            .to('status.loaded', 'status.error');
+        FL.state('status.loaded', false)
+            .to('status.loading');
+        FL.state('status.error', false)
+            .to('status.loading');
 
         FL.state('form', 'user && pass');
-        FL.state('form.valid', '@user.valid && @passValid');
+        FL.state('form.valid', '@user.valid && @pass.valid');
         FL.state('form.canLogin', '@form.valid && !@status.loading');
 
         FL.initialize();

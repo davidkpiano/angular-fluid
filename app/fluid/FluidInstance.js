@@ -98,7 +98,7 @@ FluidInstance.prototype.getStates = function() {
     return self._state;
 }
 
-FluidInstance.prototype.state = function(id, rule) {
+FluidInstance.prototype.state = function(id, rule, deterministic) {
     var self = this;
 
     if (id === undefined) {
@@ -109,17 +109,17 @@ FluidInstance.prototype.state = function(id, rule) {
         return self.getState(id);
     }
         
-    return self.createState(id, rule);
+    return self.createState(id, rule, deterministic);
 }
 
-FluidInstance.prototype.createState = function(id, rule) {
+FluidInstance.prototype.createState = function(id, rule, deterministic) {
     var self = this;
 
     console.log("Creating state '%s'", id);
 
     var rule = rule || false;
 
-    var fluidState = new FluidState(id, rule, self);
+    var fluidState = new FluidState(id, rule, deterministic, self);
 
     self.allStates.push(fluidState);
 
@@ -138,6 +138,8 @@ FluidInstance.prototype.getState = function(id) {
     var self = this;
 
     if (id == null) return self;
+
+    if (id instanceof FluidState) return id;
 
     var id = id.replace(/^@?/, '');
 
