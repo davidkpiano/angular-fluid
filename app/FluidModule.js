@@ -40,45 +40,42 @@ angular.module('FluidApp')
         });
 
         FL.state('status', false, true);
-        FL.state('status.loading', true)
+        FL.state('status.loading', false)
             .to('status.loaded', 'status.error');
         FL.state('status.loaded', false)
             .to('status.loading');
         FL.state('status.error', false)
             .to('status.loading');
 
-        FL.state('form', 'user && pass');
-        FL.state('form.valid', '@user.valid && @pass.valid');
-        FL.state('form.canLogin', '@form.valid && !@status.loading');
+        // FL.state('form', 'user && pass');
+        // FL.state('form.valid', '@user.valid && @pass.valid');
+        // FL.state('form.canLogin', '@form.valid && !@status.loading');
 
         FL.initialize();
     }]);
 
 angular.module('FluidApp')
-    .controller('TrafficController', ['FluidService', '$timeout', function(FluidService, $timeout) {
+    .controller('TrafficController', ['FluidService', '$interval', function(FluidService, $interval) {
         var self = this;
         var FL = window.traffic = FluidService.register('traffic', self);
 
         this.ui = FL.state();
 
-        FL.state('go', 'timer && @stop');
-        FL.state('wait', 'timer && @go');
-        FL.state('stop', 'timer && @wait');
+        FL.state('light', true, true);
 
-        this.timer = false;
+        FL.state('light.go', false).to('light.wait').initial();
 
-        FL.on('go', this.startTimer);
+        FL.state('light.wait', false).to('light.stop');
 
-        self.startTimer = function() {
-            console.log('timer set');
-            self.timer = true;
-            
-            $timeout(function() {
-                self.timer = false;
-            }, 2000);
-        }
+        FL.state('light.stop', false).to('light.go');
 
         FL.initialize();
+
+        self.touch = function() {
+            $interval(function() {
+                FL.state('light').determine();
+            }, 1000);
+        }
     }]);
 
 

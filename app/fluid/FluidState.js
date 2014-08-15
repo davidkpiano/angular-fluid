@@ -27,6 +27,7 @@ function FluidState(id, rule, deterministic, instance) {
     self.deterministic = deterministic || false;
 
     self.transitions = {
+        initial: null,
         from: [],
         to: []
     };
@@ -50,10 +51,22 @@ FluidState.prototype.initialize = function() {
 
     self.initializeTransitions();
 
+    if (self.transitions.initial) self.activate();
+
     self.initialized = true;
 }
 
 // Transitions
+FluidState.prototype.initial = function(value) {
+    var self = this;
+
+    value = (value || !arguments.length) ? true : false;
+
+    self.transitions.initial = !!value;
+
+    return self;
+}
+
 FluidState.prototype.transition = function(direction, states) {
     var self = this;
 
@@ -69,7 +82,7 @@ FluidState.prototype.transition = function(direction, states) {
 FluidState.prototype.from = function(states) {
     var self = this;
 
-    var states = Array.prototype.concat.apply([], arguments).slice(1);
+    var states = Array.prototype.concat.apply([], arguments);
 
     return self.transition('from', states);
 }
@@ -77,7 +90,7 @@ FluidState.prototype.from = function(states) {
 FluidState.prototype.to = function(states) {
     var self = this;
 
-    var states = Array.prototype.concat.apply([], arguments).slice(1);
+    var states = Array.prototype.concat.apply([], arguments);
 
     return self.transition('to', states);
 }
@@ -177,18 +190,19 @@ FluidState.prototype.addState = function(state) {
 }
 
 FluidState.prototype.validate = function() {
-    // Check rules
-    var rules = this.rules;
+    var self = this;
+
+    if (self.deterministic && self.states.length) {
+        return self.determine();
+    }
 
     var valid = true;
 
-    if (!rules.length) {
+    if (!self.rules.length) {
         valid = _.some(self.states, {active: true});
+    } else {
+        valid = self.isValid();
     }
-
-    _.forEach(rules, function(rule) {
-        valid = valid && rule.validate();
-    });
 
     if (valid) {
         this.activate();
@@ -197,14 +211,28 @@ FluidState.prototype.validate = function() {
     }
 }
 
+FluidState.prototype.isValid = function() {
+    var self = this;
+
+    var valid = true;
+
+    _.forEach(self.rules, function(rule) {
+        valid = valid && rule.validate();
+    });
+
+    return valid;
+}
+
 FluidState.prototype.activate = function(active) {
     var self = this;
 
-    var active = active === false ? false : true;
+    active = (active === false) ? false : true;
+
+    var stateChanged = (self.active !== active);
+
+    if (!stateChanged) return self;
 
     console.log("%sctivating state '%s'", active ? 'A' : 'Dea', self.id);
-
-    var stateChanged = active ? !self.active : self.active;
 
     self.active = active;
 
@@ -228,6 +256,25 @@ FluidState.prototype.deactivate = function() {
     var self = this;
 
     self.activate(false);
+
+    return self;
+}
+
+FluidState.prototype.determine = function() {
+    var self = this;
+
+    var activeState = _.find(self.states, {active: true});
+
+    var nextState = _.find(self.states, function(fluidState) {
+        return fluidState.isValid()
+            && _.find(fluidState.transitions.from, function(fromState) {
+                return fromState === activeState;
+            });
+    });
+
+    activeState.deactivate();
+
+    nextState.activate();
 
     return self;
 }
