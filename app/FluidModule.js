@@ -14,22 +14,22 @@ angular.module('FluidApp')
         self.login = function() {
             FL.state('user.valid').validate();
 
-            FL.state('status').activate();
-            FL.state('status.loading').activate();
+            FL.go('status.loading');
 
-            LoginService.login(self.user, self.pass)
+            var loginPromise = LoginService.login(self.user, self.pass)
                 .then(function(data) {
-                    FL.state('status.loaded').activate();
+                    FL.go('status.loaded');
                 },
 
                 function(data) {
-                    FL.state('status.error').activate();
+                    FL.go('status.error');
                 });
         }
 
         FL.state('user', 'user');
 
         FL.state('user.valid', function() {
+            console.log('checking');
             return self.user && self.user.length >= 5;
         });
 
@@ -39,7 +39,10 @@ angular.module('FluidApp')
             return self.pass && self.pass.length;
         });
 
-        FL.state('status', false, true);
+        FL.state('status', true, true);
+        FL.state('status.pending', true)
+            .to('status.loaded')
+            .initial();
         FL.state('status.loading', false)
             .to('status.loaded', 'status.error');
         FL.state('status.loaded', false)
@@ -47,9 +50,9 @@ angular.module('FluidApp')
         FL.state('status.error', false)
             .to('status.loading');
 
-        // FL.state('form', 'user && pass');
-        // FL.state('form.valid', '@user.valid && @pass.valid');
-        // FL.state('form.canLogin', '@form.valid && !@status.loading');
+        FL.state('form', 'user && pass');
+        FL.state('form.valid', '@user.valid && @pass.valid');
+        FL.state('form.canLogin', '@form.valid && !@status.loading');
 
         FL.initialize();
     }]);
@@ -61,7 +64,7 @@ angular.module('FluidApp')
 
         this.ui = FL.state();
 
-        FL.state('light', true, true);
+        FL.state('light', 'foo', true);
 
         FL.state('light.go', false).to('light.wait').initial();
 
@@ -70,6 +73,21 @@ angular.module('FluidApp')
         FL.state('light.stop', false).to('light.go');
 
         FL.initialize();
+
+        var foo = {
+            light: {
+                go: {
+                    _initial: true,
+                    _to: 'light.wait'
+                },
+                wait: {
+                    _to: 'light.stop'
+                },
+                stop: {
+                    _to: 'light.go'
+                }
+            }
+        }
 
         self.touch = function() {
             $interval(function() {

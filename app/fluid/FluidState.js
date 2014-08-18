@@ -226,19 +226,15 @@ FluidState.prototype.isValid = function() {
 FluidState.prototype.activate = function(active) {
     var self = this;
 
-    active = (active === false) ? false : true;
+    active = arguments.length ? !!active : true;
 
-    var stateChanged = (self.active !== active);
+    if (self.active !== active) {    
+        console.log("%sctivating state '%s'", active ? 'A' : 'Dea', self.id);
 
-    if (!stateChanged) return self;
+        self.active = active;
 
-    console.log("%sctivating state '%s'", active ? 'A' : 'Dea', self.id);
+        self.instance.getStates();
 
-    self.active = active;
-
-    stateChanged && self.instance.getStates();
-
-    if (stateChanged) {
         self.trigger && self.trigger.trigger();
         self.notifyListeners();
         self.instance.refresh();
@@ -260,21 +256,35 @@ FluidState.prototype.deactivate = function() {
     return self;
 }
 
-FluidState.prototype.determine = function() {
+FluidState.prototype.determine = function(targetState) {
     var self = this;
 
     var activeState = _.find(self.states, {active: true});
 
-    var nextState = _.find(self.states, function(fluidState) {
-        return fluidState.isValid()
-            && _.find(fluidState.transitions.from, function(fromState) {
-                return fromState === activeState;
+    var nextState;
+
+    if (arguments.length && targetState instanceof FluidState) {
+        nextState = targetState;
+    } else {
+        nextState = _.find(self.states, function(fluidState) {
+            return fluidState.isValid()
+                && _.find(fluidState.transitions.from, function(fromState) {
+                    return fromState === activeState;
+                });
             });
-    });
+    }
 
     activeState.deactivate();
 
     nextState.activate();
+
+    return self;
+}
+
+FluidState.prototype.go = function() {
+    var self = this;
+
+    self.parent.determine(self);
 
     return self;
 }
@@ -309,13 +319,15 @@ FluidState.prototype.setTrigger = function(trigger) {
     return self;
 }
 
-FluidState.prototype.toggle = function(value) {
+FluidState.prototype.toggle = function(active) {
     var self = this;
 
-    if (value === undefined) {
+    active = !!active;
+
+    if (!arguments.length) {
         self[self.active ? 'deactivate' : 'activate']();
     } else {
-        self[!!value ? 'activate' : 'deactivate']();
+        self[active ? 'activate' : 'deactivate']();
     }
 
     self.instance.refresh();

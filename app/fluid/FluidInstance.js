@@ -29,9 +29,11 @@ function FluidInstance(id, scope, $parse) {
                 link: function(trigger) {
                     console.log("Adding $watch for trigger '%s'", id);
 
-                    scope.$watch([self.id, trigger.id].join('.'), function(a, b) {
-                        trigger.trigger();
-                        self.getStates();
+                    scope.$watch([self.id, trigger.id].join('.'), function(previousVal, currentVal) {
+                        if (previousVal !== currentVal) {
+                            trigger.trigger();
+                            self.getStates();
+                        }
                     });
                 }
             },
@@ -250,6 +252,18 @@ FluidInstance.prototype.toggle = function(stateId, value) {
     console.log("Toggling state '%s'", stateId);
 
     state && state.toggle(value);
+
+    return self;
+}
+
+FluidInstance.prototype.go = function(stateId) {
+    var self = this;
+
+    var fluidState = self.getState(stateId);
+
+    console.log("Going to state '%s'", stateId);
+
+    fluidState.go();
 
     return self;
 }
