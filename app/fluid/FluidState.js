@@ -74,8 +74,6 @@ FluidState.prototype.transition = function(direction, states) {
 
     self.transitions[direction] = _.union(self.transitions[direction], states);
 
-    console.log(self.transitions);
-
     return self;
 }
 
@@ -95,23 +93,52 @@ FluidState.prototype.to = function(states) {
     return self.transition('to', states);
 }
 
+FluidState.prototype.hasTransition = function(direction, state) {
+    var self = this;
+
+    var transitionState;
+
+    if (!self.transitions[direction].length) {
+        return true;
+    } 
+
+    transitionState = _.find(self.transitions[direction], function(currentState) {
+        return currentState === state;
+    });
+
+    console.log("State '%s' does%s have a transition %s state '%s'", self.id, !!transitionState ? '' : ' NOT', direction, state.id);
+
+    return !!transitionState;
+}
+
+FluidState.prototype.hasTransitionFrom = function(state) {
+    var self = this;
+
+    return self.hasTransition('from', state);
+}
+
+FluidState.prototype.hasTransitionTo = function(state) {
+    var self = this;
+
+    return self.hasTransition('to', state);
+}
+
 FluidState.prototype.initializeTransitions = function() {
     var self = this;
 
-    self.transitions.from = _.map(self.transitions.from, function(fromState) {
-        var fluidState = self.instance.getState(fromState);
+    var reverseDirection = {
+        'from': 'to',
+        'to': 'from'
+    };
 
-        fluidState.to(self);
+    _.each(reverseDirection, function(direction) {
+        self.transitions[direction] = _.map(self.transitions[direction], function(currentState) {
+            var fluidState = self.instance.getState(currentState);
 
-        return fluidState;
-    });
+            fluidState[reverseDirection[direction]](self);
 
-    self.transitions.to = _.map(self.transitions.to, function(toState) {
-        var fluidState = self.instance.getState(toState);
-
-        fluidState.from(self);
-
-        return fluidState;
+            return fluidState;
+        });
     });
 
     return self;
@@ -184,13 +211,19 @@ FluidState.prototype.parseId = function(id) {
 }
 
 FluidState.prototype.addState = function(state) {
-    this.states.push(state);
+    var self = this;
+
+    self.states.push(state);
 
     state.parent = this;
+
+    return self;
 }
 
 FluidState.prototype.validate = function() {
     var self = this;
+
+    console.log("Validating state '%s'", self.id);
 
     if (self.deterministic && self.states.length) {
         return self.determine();
@@ -268,10 +301,18 @@ FluidState.prototype.determine = function(targetState) {
     } else {
         nextState = _.find(self.states, function(fluidState) {
             return fluidState.isValid()
-                && _.find(fluidState.transitions.from, function(fromState) {
-                    return fromState === activeState;
-                });
+                && fluidState.hasTransitionFrom(activeState);
             });
+    }
+
+    if (!activeState) {
+        console.error("Deterministic parent state '%s' has no initial state.", self.id);
+        return false;
+    }
+
+    if (!nextState) {
+        console.error("Unable to transition from state '%s'; transitions may be incomplete.", activeState.id);
+        return false;
     }
 
     activeState.deactivate();

@@ -29,9 +29,14 @@ angular.module('FluidApp')
         FL.state('user', 'user');
 
         FL.state('user.valid', function() {
-            console.log('checking');
             return self.user && self.user.length >= 5;
         });
+
+        FL.state('name', 'user', true);
+
+        FL.state('name.short', function() {return self.user.length < 6});
+        FL.state('name.medium', function() {return self.user.length >= 6 && self.user.length < 12}).initial();
+        FL.state('name.long', function() {return self.user.length >= 12});
 
         FL.state('pass', 'pass');
 
@@ -76,15 +81,10 @@ angular.module('FluidApp')
 
         var foo = {
             light: {
-                go: {
-                    _initial: true,
-                    _to: 'light.wait'
-                },
-                wait: {
-                    _to: 'light.stop'
-                },
-                stop: {
-                    _to: 'light.go'
+                states: {
+                    go: {
+                        to: 'light.wait'
+                    }
                 }
             }
         }
