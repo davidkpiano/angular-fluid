@@ -28,6 +28,7 @@ function FluidState(id, rule, deterministic, instance) {
 
     self.transitions = {
         initial: false,
+        accepting: false,
         from: [],
         to: []
     };
@@ -62,7 +63,17 @@ FluidState.prototype.initial = function(value) {
 
     value = (value || !arguments.length) ? true : false;
 
-    self.transitions.initial = !!value;
+    self.transitions.initial = value;
+
+    return self;
+}
+
+FluidState.prototype.accepting = function(value) {
+    var self = this;
+
+    value = (value || !arguments.length) ? true : false;
+
+    self.transitions.accepting = value;
 
     return self;
 }
@@ -256,6 +267,16 @@ FluidState.prototype.isValid = function() {
     return valid;
 }
 
+FluidState.prototype.activateTrigger = function() {
+    var self = this;
+
+    if (self.trigger) {
+        self.trigger.activate();
+    }
+
+    return self;
+}
+
 FluidState.prototype.activate = function(active) {
     var self = this;
 
@@ -268,15 +289,17 @@ FluidState.prototype.activate = function(active) {
 
         self.instance.getStates();
 
-        self.trigger && self.trigger.trigger();
+        self.activateTrigger();
         self.notifyListeners();
         self.instance.refresh();
     }
 
-    _.each(self.states, function(state) {
-        console.log("Validating child state '%s'", state.id);
-        state.validate();
-    });
+    if (!self.deterministic) {    
+        _.each(self.states, function(state) {
+            console.log("Validating child state '%s'", state.id);
+            state.validate();
+        });
+    }
 
     return self;
 }
@@ -318,6 +341,8 @@ FluidState.prototype.determine = function(targetState) {
     activeState.deactivate();
 
     nextState.activate();
+
+    nextState.transitions.accepting ? self.activate() : self.deactivate();
 
     return self;
 }
@@ -398,6 +423,14 @@ FluidState.prototype.simplify = function() {
     var self = this;
 
     if (!self.states.length) return self.active;
+
+    if (self.deterministic) {
+        if (!self.active) {
+            self.state = [];
+        } else {
+            self.state = {};
+        }
+    }
 
     if (_.every(self.states, {active: false})) return self.active;
 

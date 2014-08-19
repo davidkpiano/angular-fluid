@@ -41,7 +41,7 @@ FluidTrigger.prototype.addState = function(state) {
     return self;
 }
 
-FluidTrigger.prototype.trigger = function() {
+FluidTrigger.prototype.activate = function() {
     var self = this;
 
     console.log("Triggering trigger '%s'", self.id);

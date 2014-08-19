@@ -31,7 +31,7 @@ function FluidInstance(id, scope, $parse) {
 
                     scope.$watch([self.id, trigger.id].join('.'), function(previousVal, currentVal) {
                         if (previousVal !== currentVal) {
-                            trigger.trigger();
+                            trigger.activate();
                             self.getStates();
                         }
                     });

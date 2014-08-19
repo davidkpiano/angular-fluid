@@ -34,9 +34,9 @@ angular.module('FluidApp')
 
         FL.state('name', 'user', true);
 
-        FL.state('name.short', function() {return self.user.length < 6});
+        FL.state('name.short', function() {return self.user.length < 6}).accepting();
         FL.state('name.medium', function() {return self.user.length >= 6 && self.user.length < 12}).initial();
-        FL.state('name.long', function() {return self.user.length >= 12});
+        FL.state('name.long', function() {return self.user.length >= 12}).accepting();
 
         FL.state('pass', 'pass');
 
