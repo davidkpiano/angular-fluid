@@ -27,7 +27,7 @@ function FluidState(id, rule, deterministic, instance) {
     self.deterministic = deterministic || false;
 
     self.transitions = {
-        initial: null,
+        initial: false,
         from: [],
         to: []
     };

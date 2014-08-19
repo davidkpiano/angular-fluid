@@ -8,33 +8,49 @@ function FluidTrigger(id, instance) {
 
     self.states = [];
 
-    self.addState = function(state) {
-        if (!_.find(self.states, {id: state.id})) {
-            self.states.push(state);
-        }
+    self.instance = instance;
 
-        return self;
+    self.initialized = false;
+}
+
+FluidTrigger.prototype.initialize = function() {
+    var self = this;
+
+    console.log('Initializing trigger %s', self.id);
+
+    if (!self.instance.types.trigger(self)) {
+        console.error("Invalid trigger ID: '%s'", id);
     }
 
-    self.trigger = function() {
-        console.log("Triggering trigger '%s'", self.id);
+    self.type = self.instance.types.trigger(self);
 
-        _.forEach(self.states, function(state) {
-            state.validate();
-        });
+    self.type.link(self);
 
-        instance.getStates();
+    self.initialized = true;
+
+    return self;
+}
+
+FluidTrigger.prototype.addState = function(state) {
+    var self = this;
+
+    if (!_.find(self.states, {id: state.id})) {
+        self.states.push(state);
     }
 
-    var init = function() {
-        if (!instance.types.trigger(self)) {
-            console.error("Invalid trigger ID: '%s'", id);
-        }
+    return self;
+}
 
-        self.type = instance.types.trigger(self);
+FluidTrigger.prototype.trigger = function() {
+    var self = this;
 
-        self.type.link(self);
-    };
+    console.log("Triggering trigger '%s'", self.id);
 
-    init();
+    _.forEach(self.states, function(state) {
+        state.validate();
+    });
+
+    self.instance.getStates();
+
+    return self;
 }

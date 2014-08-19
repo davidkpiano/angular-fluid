@@ -81,6 +81,11 @@ FluidInstance.prototype.initialize = function() {
         fluidRule.initialize();
     });
 
+    // Initialize triggers
+    _.each(self.triggers, function(fluidTrigger) {
+        fluidTrigger.initialize();
+    });
+
     self.getStates();
 
     self.createState('_');
