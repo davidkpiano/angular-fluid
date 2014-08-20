@@ -144,7 +144,7 @@ FluidInstance.prototype.addState = function(state) {
 FluidInstance.prototype.getState = function(id) {
     var self = this;
 
-    if (id == null) return self;
+    if (!id) return self;
 
     if (id instanceof FluidState) return id;
 
@@ -188,6 +188,8 @@ FluidInstance.prototype.addTrigger = function(id, state) {
 FluidInstance.prototype.addTriggers = function(triggers, fluidState) {
     var self = this;
 
+    console.log(triggers);console.log(fluidState);
+
     _.each(triggers, function(trigger) {
         self.addTrigger(trigger, fluidState);
     });
@@ -213,12 +215,14 @@ FluidInstance.prototype.trigger = function(id) {
     return self;
 }
 
-FluidInstance.prototype.addRule = function(rule, state) {
+FluidInstance.prototype.addRule = function(rule, toState, fromState) {
     var self = this;
+
+    console.log("Adding rule '%s' to '%s' from '%s'", rule, toState, fromState);
 
     var fluidRule;
 
-    fluidRule = new FluidRule(rule, state, self);
+    fluidRule = new FluidRule(rule, toState, fromState, self);
 
     self.rules.push(fluidRule);
 

@@ -78,30 +78,35 @@ FluidState.prototype.accepting = function(value) {
     return self;
 }
 
-FluidState.prototype.transition = function(direction, states) {
+FluidState.prototype.transition = function(direction, state) {
     var self = this;
 
-    console.log("Adding states '%s' as transition %s '%s'", states.join(', '), direction, self.id);
+    console.log("Adding state '%s' as transition %s '%s'", state.id, direction, self.id);
 
-    self.transitions[direction] = _.union(self.transitions[direction], states);
+    self.transitions[direction].push(state);
+    self.transitions[direction] = _.unique(self.transitions[direction]);
 
     return self;
 }
 
-FluidState.prototype.from = function(states) {
+FluidState.prototype.from = function(fromState, rule) {
     var self = this;
 
-    var states = Array.prototype.concat.apply([], arguments);
+    if (rule) {
+        self.instance.addRule(rule, self, fromState);
+    }
 
-    return self.transition('from', states);
+    return self.transition('from', fromState);
 }
 
-FluidState.prototype.to = function(states) {
+FluidState.prototype.to = function(toState, rule) {
     var self = this;
 
-    var states = Array.prototype.concat.apply([], arguments);
+    if (rule) {
+        self.instance.addRule(rule, toState, self);
+    }
 
-    return self.transition('to', states);
+    return self.transition('to', toState);
 }
 
 FluidState.prototype.hasTransition = function(direction, state) {
@@ -109,9 +114,13 @@ FluidState.prototype.hasTransition = function(direction, state) {
 
     var transitionState;
 
-    if (!self.transitions[direction].length) {
+    if (!(self.transitions.from.length || self.transitions.to.length)) {
         return true;
-    } 
+    }
+
+    if (!self.transitions[direction].length) {
+        return false;
+    }
 
     transitionState = _.find(self.transitions[direction], function(currentState) {
         return currentState === state;
@@ -255,12 +264,15 @@ FluidState.prototype.validate = function() {
     }
 }
 
-FluidState.prototype.isValid = function() {
+FluidState.prototype.isValid = function(fromState) {
     var self = this;
 
     var valid = true;
 
-    _.forEach(self.rules, function(rule) {
+    console.log("Validating state '%s':", self.id);
+    console.log(self.rules);
+
+    _.forEach(_.filter(self.rules, {fromState: fromState}), function(rule) {
         valid = valid && rule.validate();
     });
 
@@ -315,6 +327,8 @@ FluidState.prototype.deactivate = function() {
 FluidState.prototype.determine = function(targetState) {
     var self = this;
 
+    console.log("Determining state '%s'", self.id);
+
     var activeState = _.find(self.states, {active: true});
 
     var nextState;
@@ -322,6 +336,7 @@ FluidState.prototype.determine = function(targetState) {
     if (arguments.length && targetState instanceof FluidState) {
         nextState = targetState;
     } else {
+        console.log('hereeeee');
         nextState = _.find(self.states, function(fluidState) {
             return fluidState.isValid()
                 && fluidState.hasTransitionFrom(activeState);
@@ -355,7 +370,7 @@ FluidState.prototype.go = function() {
     return self;
 }
 
-FluidState.prototype.addRule = function(rule) {
+FluidState.prototype.addRule = function(rule, fromState) {
     var self = this;
 
     var fluidRule;
@@ -363,9 +378,9 @@ FluidState.prototype.addRule = function(rule) {
     if (rule === undefined) return self;
 
     if (rule instanceof FluidRule) {
-        fluidRule = self.instance.addRule(rule.validate, self);
+        fluidRule = self.instance.addRule(rule.validate, self, fromState);
     } else if (_.isString(rule) || _.isFunction(rule)) {
-        fluidRule = self.instance.addRule(rule, self);
+        fluidRule = self.instance.addRule(rule, self, fromState);
     } else {
         return (self.toggle(rule), self);
     }
