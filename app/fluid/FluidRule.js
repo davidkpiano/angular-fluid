@@ -22,6 +22,8 @@ FluidRule.prototype.initialize = function() {
 
     self.fromState = self.instance.getState(self.fromState);
 
+    self.toState.pushRule(self);
+
     self.validate = self.parseValidate(self.rule);
 
     self.initialized = true;

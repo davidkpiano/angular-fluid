@@ -29,6 +29,7 @@ function FluidState(id, rule, deterministic, instance) {
     self.transitions = {
         initial: false,
         accepting: false,
+        acceptAny: false,
         from: [],
         to: []
     };
@@ -52,9 +53,25 @@ FluidState.prototype.initialize = function() {
 
     self.initializeTransitions();
 
+    self.initializeAutomaton();
+
     if (self.transitions.initial) self.activate();
 
     self.initialized = true;
+}
+
+FluidState.prototype.initializeAutomaton = function() {
+    var self = this;
+
+    if (self.deterministic) {
+        if (self.transitions.acceptAny) {
+            _.each(self.states, function(fluidState) {
+                fluidState.accepting();
+            });
+        }
+    }
+
+    return self;
 }
 
 // Transitions
@@ -74,6 +91,16 @@ FluidState.prototype.accepting = function(value) {
     value = (value || !arguments.length) ? true : false;
 
     self.transitions.accepting = value;
+
+    return self;
+}
+
+FluidState.prototype.acceptAny = function(value) {
+    var self = this;
+
+    value = (value || !arguments.length) ? true : false;
+
+    self.transitions.acceptAny = value;
 
     return self;
 }
@@ -269,11 +296,19 @@ FluidState.prototype.isValid = function(fromState) {
 
     var valid = true;
 
-    console.log("Validating state '%s':", self.id);
-    console.log(self.rules);
+    var fluidRules;
 
-    _.forEach(_.filter(self.rules, {fromState: fromState}), function(rule) {
-        valid = valid && rule.validate();
+    if (!fromState) {
+        fluidRules = _.filter(self.rules, {fromState: self.instance});
+    } else {
+        fluidRules = _.filter(self.rules, function(fluidRule) {
+            return fluidRule.fromState === self.instance
+                || fluidRule.fromState === fromState;
+        });
+    }
+
+    _.forEach(fluidRules, function(fluidRule) {
+        valid = valid && fluidRule.validate();
     });
 
     return valid;
@@ -338,7 +373,7 @@ FluidState.prototype.determine = function(targetState) {
     } else {
         console.log('hereeeee');
         nextState = _.find(self.states, function(fluidState) {
-            return fluidState.isValid()
+            return fluidState.isValid(activeState)
                 && fluidState.hasTransitionFrom(activeState);
             });
     }
@@ -349,15 +384,21 @@ FluidState.prototype.determine = function(targetState) {
     }
 
     if (!nextState) {
-        console.error("Unable to transition from state '%s'; transitions may be incomplete.", activeState.id);
-        return false;
+        if (activeState.isValid()) {
+            return self;
+        } else {        
+            console.error("Unable to transition from state '%s'; transitions may be incomplete.", activeState.id);
+            return false;
+        }
+    } else {
+        activeState.deactivate();
+
+        nextState.activate();
+
+        (nextState.transitions.accepting || self.transitions.acceptAny)
+            ? self.activate()
+            : self.deactivate();
     }
-
-    activeState.deactivate();
-
-    nextState.activate();
-
-    nextState.transitions.accepting ? self.activate() : self.deactivate();
 
     return self;
 }
@@ -373,17 +414,21 @@ FluidState.prototype.go = function() {
 FluidState.prototype.addRule = function(rule, fromState) {
     var self = this;
 
-    var fluidRule;
-
     if (rule === undefined) return self;
 
     if (rule instanceof FluidRule) {
-        fluidRule = self.instance.addRule(rule.validate, self, fromState);
+        self.instance.addRule(rule.validate, self, fromState);
     } else if (_.isString(rule) || _.isFunction(rule)) {
-        fluidRule = self.instance.addRule(rule, self, fromState);
+        self.instance.addRule(rule, self, fromState);
     } else {
         return (self.toggle(rule), self);
     }
+
+    return self;
+}
+
+FluidState.prototype.pushRule = function(fluidRule) {
+    var self = this;
 
     self.rules.push(fluidRule);
 
