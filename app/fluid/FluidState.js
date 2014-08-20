@@ -368,6 +368,11 @@ FluidState.prototype.determine = function(targetState) {
 
     var nextState;
 
+    if (!activeState) {
+        console.error("Deterministic parent state '%s' has no initial state.", self.id);
+        return false;
+    }
+
     if (arguments.length && targetState instanceof FluidState) {
         nextState = targetState;
     } else {
@@ -378,11 +383,6 @@ FluidState.prototype.determine = function(targetState) {
             });
     }
 
-    if (!activeState) {
-        console.error("Deterministic parent state '%s' has no initial state.", self.id);
-        return false;
-    }
-
     if (!nextState) {
         if (activeState.isValid()) {
             return self;
@@ -390,6 +390,9 @@ FluidState.prototype.determine = function(targetState) {
             console.error("Unable to transition from state '%s'; transitions may be incomplete.", activeState.id);
             return false;
         }
+    } else if (!activeState.hasTransitionTo(targetState)) {
+        console.error("Active state '%s' has no transition to target state '%s'", activeState.id, targetState.id);
+        return false;
     } else {
         activeState.deactivate();
 
