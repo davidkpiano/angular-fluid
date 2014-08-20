@@ -314,6 +314,14 @@ FluidState.prototype.isValid = function(fromState) {
     return valid;
 }
 
+FluidState.prototype.siblings = function() {
+    var self = this;
+
+    return _.filter(self.parent.states, function(fluidState) {
+        return fluidState !== self;
+    });
+}
+
 FluidState.prototype.activateTrigger = function() {
     var self = this;
 
@@ -376,7 +384,6 @@ FluidState.prototype.determine = function(targetState) {
     if (arguments.length && targetState instanceof FluidState) {
         nextState = targetState;
     } else {
-        console.log('hereeeee');
         nextState = _.find(self.states, function(fluidState) {
             return fluidState.isValid(activeState)
                 && fluidState.hasTransitionFrom(activeState);

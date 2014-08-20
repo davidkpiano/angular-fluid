@@ -108,15 +108,21 @@ FluidInstance.prototype.getStates = function() {
 FluidInstance.prototype.state = function(id, rule, deterministic) {
     var self = this;
 
-    if (id === undefined) {
+    var fluidState = null;
+
+    if (!arguments.length) {
         return self._state;
     }
 
-    if (rule === undefined) {
-        return self.getState(id);
+    if (arguments.length === 1) {
+        fluidState = self.getState(id);
     }
-        
-    return self.createState(id, rule, deterministic);
+    
+    if (!fluidState) {
+        fluidState = self.createState(id, rule, deterministic);
+    }
+
+    return fluidState;
 }
 
 FluidInstance.prototype.createState = function(id, rule, deterministic) {
@@ -155,7 +161,7 @@ FluidInstance.prototype.getState = function(id) {
     });
 
     if (stateResults.length !== 1) {
-        console.error("FluidState '%s' does not exist.", id);
+        console.warn("FluidState '%s' does not exist.", id);
 
         return null;
     }
