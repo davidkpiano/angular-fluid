@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body ng-app="FluidApp" class="layer">
-    <div class="row-12 content theme-primary" ng-controller="LoginController as login">
-        <div class="col-6 col-auto col-center theme-white content">
+    <div class="row-12 content">
+        <div class="col-6 col-auto theme-white content" ng-controller="LoginController as login">
             <h1>Login Form</h1>
             <div class="alert light" ng-show="login.ui.status.loading">Logging in...</div>
             <div class="alert success" ng-show="login.ui.status.loaded">Logged in!</div>
@@ -22,16 +22,6 @@
                 <label>Password</label>
                 <input type="text" name="" id="" ng-model="login.pass">
             </div>
-            <div class="dropdown-container">
-                <button>Dropdown</button>
-                <nav class="dropdown" ng-show="ui.dropdown.active">
-                    <ul>
-                        <li><a href="">Item 1</a></li>
-                        <li><a href="">Item 2</a></li>
-                        <li><a href="">Item 3</a></li>
-                    </ul>
-                </nav>
-            </div>
             <div class="field clearfix">
                 <button class="right" ng-click="login.login()" ng-disabled="!login.ui.form.canLogin">
                     <span ng-show="login.ui.status.loading">Logging in...</span>
@@ -39,32 +29,38 @@
                 </button>
             </div>
 
+            <div vp-mentionable>hello</div>
+
             <pre class="small">{{login.ui | json}}</pre>
-            
-            <div class="dropdown-container">
-                <button>Dropdown</button>
-                <nav class="dropdown" ng-show="ui.dropdown.active">
-                    <ul>
-                        <li><a href="">Item 1</a></li>
-                        <li><a href="">Item 2</a></li>
-                        <li><a href="">Item 3</a></li>
-                    </ul>
-                </nav>
-                <pre>{{ui | json}}</pre>
-            </div>
+            <pre class="small">
+                {{login.test}}
+                {{login.test.active}}
+            </pre>
+        </div>
+        <div class="col-6 col-auto theme-white content" ng-controller="TrafficController as traffic">
+            <input type="text" ng-model="traffic.foo">
+            <div class="alert success" ng-show="traffic.ui.light.go">Go!</div>
+            <div class="alert warning" ng-show="traffic.ui.light.wait">Wait!</div>
+            <div class="alert failure" ng-show="traffic.ui.light.stop">Stop!</div>
+            <pre>{{traffic.ui | json}}</pre>
+            {{traffic.timer}}
+            <button ng-click="traffic.touch()">Start Timer</button>
         </div>
     </div>
 </body>
 
+<!-- DELETE -->
 <script src="assets/js/angular.min.js"></script>
 <script src="assets/js/lodash.min.js"></script>
 <script src="app/FluidModule.js"></script>
 
 <script src="app/fluid/FluidState.js"></script>
 <script src="app/fluid/FluidRule.js"></script>
+<script src="app/fluid/FluidCycle.js"></script>
 <script src="app/fluid/FluidTrigger.js"></script>
 <script src="app/fluid/FluidInstance.js"></script>
 <script src="app/fluid/FluidListener.js"></script>
 
 <script src="app/FluidService.js"></script>
+
 </html>
