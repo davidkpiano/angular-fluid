@@ -12,8 +12,6 @@ angular.module('FluidApp')
         self.ui = FL.state();
 
         self.login = function() {
-            FL.state('user.valid').validate();
-
             FL.go('status.loading');
 
             var loginPromise = LoginService.login(self.user, self.pass)
@@ -26,38 +24,54 @@ angular.module('FluidApp')
                 });
         }
 
-        FL.state('user', 'user');
+        FL.state('user', 'user', true)
+            .acceptAny();
 
-        FL.state('user.valid', function() {
-            return self.user && self.user.length >= 5;
-        });
+        FL.state('user.valid');
 
-        FL.state('name', 'user', true);
+        FL.state('user.invalid');
 
-        FL.state('name.short', function() {return self.user.length < 6}).accepting();
-        FL.state('name.medium', function() {return self.user.length >= 6 && self.user.length < 12}).initial();
-        FL.state('name.long', function() {return self.user.length >= 12}).accepting();
+        FL.state('user.invalid.length')
+            .addRule(function() {
+                return !self.user || self.user.length < 6;
+            });
+ 
+        FL.state('user.invalid.illegal')
+            .addRule(function() {
+                return /[0-9]/.test(self.user);
+            });
 
-        FL.state('pass', 'pass');
+        // FL.state('name', 'user', true).acceptAny();
 
-        FL.state('pass.valid', function() {
-            return self.pass && self.pass.length;
-        });
+        // FL.state('name.empty', function() {return !self.user.length})
+        //     .initial();
 
-        FL.state('status', true, true);
-        FL.state('status.pending', true)
-            .to('status.loaded')
-            .initial();
-        FL.state('status.loading', false)
-            .to('status.loaded', 'status.error');
-        FL.state('status.loaded', false)
-            .to('status.loading');
-        FL.state('status.error', false)
-            .to('status.loading');
+        // FL.state('name.short', function() {return self.user.length < 6});
+        // FL.state('name.medium', function() {return self.user.length >= 6 && self.user.length < 12});
+        // FL.state('name.long', function() {return self.user.length >= 12});
 
-        FL.state('form', 'user && pass');
-        FL.state('form.valid', '@user.valid && @pass.valid');
-        FL.state('form.canLogin', '@form.valid && !@status.loading');
+        // FL.state('pass', 'pass');
+
+        // FL.state('pass.valid', function() {
+        //     return self.pass && self.pass.length;
+        // });
+
+        // FL.state('status', true, true)
+        //     .acceptAny();
+        // FL.state('status.pending', true)
+        //     .to('status.loading')
+        //     .initial();
+        // FL.state('status.loading', false)
+        //     .to('status.loaded')
+        //     .to('status.error');
+        // FL.state('status.loaded', false)
+        //     .to('status.loading');
+        // FL.state('status.error', false)
+        //     .to('status.loading');
+
+        // FL.state('form', 'user && pass');
+        // FL.state('form.valid', '@user.valid && @pass.valid');
+        // FL.state('form.canLogin', '@form.valid && !@status.loading');
 
         FL.initialize();
     }]);

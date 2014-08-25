@@ -1,0 +1,9 @@
+<div>
+    <div id="foo" class="vp-mentionable" contenteditable ng-model="login.foo">
+        Hello World
+    </div>
+
+    <ul ng-show="filteredUsers.length">
+        <li ng-repeat="user in filteredUsers = (users | filter: {name: currentMention})" ng-click="mention(user)">{{user.name}}</li>
+    </ul>
+</div>

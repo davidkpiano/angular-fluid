@@ -1,5 +1,5 @@
 // Constructor for FluidState
-function FluidState(id, rule, deterministic, instance) {
+function FluidState(id, triggers, deterministic, instance) {
     var self = this;
 
     self.meta = {};
@@ -41,7 +41,7 @@ function FluidState(id, rule, deterministic, instance) {
     self.initialized = false;
 
     // Pre-Initialization Steps
-    self.addRule(rule);
+    self.addTrigger(triggers);
 }
 
 FluidState.prototype.initialize = function() {
@@ -55,13 +55,13 @@ FluidState.prototype.initialize = function() {
 
     self.initializeAutomaton();
 
-    if (self.transitions.initial) self.activate();
-
     self.initialized = true;
 }
 
 FluidState.prototype.initializeAutomaton = function() {
     var self = this;
+
+    var initialFluidState = self.transitions.initial
 
     if (self.deterministic) {
         if (self.transitions.acceptAny) {
@@ -71,16 +71,24 @@ FluidState.prototype.initializeAutomaton = function() {
         }
     }
 
+    if (!(initialFluidState instanceof FluidState)) {
+        initialFluidState = _.find(self.states, function(fluidState) {
+            return fluidState.isValid();
+        });
+
+        console.log(initialFluidState);
+    }
+
+    initialFluidState.activate();
+
     return self;
 }
 
 // Transitions
-FluidState.prototype.initial = function(value) {
+FluidState.prototype.initial = function(state) {
     var self = this;
 
-    value = (value || !arguments.length) ? true : false;
-
-    self.transitions.initial = value;
+    self.transitions.initial = state;
 
     return self;
 }
@@ -188,6 +196,10 @@ FluidState.prototype.initializeTransitions = function() {
         });
     });
 
+    if (self.transitions.initial) {
+        self.transitions.initial = self.instance.getState(self.transitions.initial);
+    }
+
     return self;
 }
 
@@ -272,8 +284,12 @@ FluidState.prototype.validate = function() {
 
     console.log("Validating state '%s'", self.id);
 
-    if (self.deterministic && self.states.length) {
+    if (self.deterministic) {
         return self.determine();
+    }
+
+    if (self.parent.deterministic) {
+        return self.parent.determine(self);
     }
 
     var valid = true;
@@ -285,10 +301,12 @@ FluidState.prototype.validate = function() {
     }
 
     if (valid) {
-        this.activate();
+        self.activate();
     } else {
-        this.deactivate();
+        self.deactivate();
     }
+
+    return self;
 }
 
 FluidState.prototype.isValid = function(fromState) {
@@ -297,6 +315,12 @@ FluidState.prototype.isValid = function(fromState) {
     var valid = true;
 
     var fluidRules;
+
+    if (self.states.length) {
+        return _.any(self.states, function(fluidState) {
+            return fluidState.isValid();
+        });
+    }
 
     if (!fromState) {
         fluidRules = _.filter(self.rules, {fromState: self.instance});
@@ -322,12 +346,14 @@ FluidState.prototype.siblings = function() {
     });
 }
 
-FluidState.prototype.activateTrigger = function() {
+FluidState.prototype.notify = function() {
     var self = this;
 
     if (self.trigger) {
         self.trigger.activate();
     }
+
+    self.notifyListeners();
 
     return self;
 }
@@ -342,19 +368,15 @@ FluidState.prototype.activate = function(active) {
 
         self.active = active;
 
-        self.instance.getStates();
-
-        self.activateTrigger();
-        self.notifyListeners();
-        self.instance.refresh();
+        self.notify();
     }
 
-    if (!self.deterministic) {    
-        _.each(self.states, function(state) {
-            console.log("Validating child state '%s'", state.id);
-            state.validate();
-        });
-    }
+    // if (!self.deterministic) {    
+    //     _.each(self.states, function(state) {
+    //         console.log("Validating child state '%s'", state.id);
+    //         state.validate();
+    //     });
+    // }
 
     return self;
 }
@@ -395,10 +417,12 @@ FluidState.prototype.determine = function(targetState) {
             return self;
         } else {        
             console.error("Unable to transition from state '%s'; transitions may be incomplete.", activeState.id);
+
             return false;
         }
     } else if (!activeState.hasTransitionTo(targetState)) {
         console.error("Active state '%s' has no transition to target state '%s'", activeState.id, targetState.id);
+
         return false;
     } else {
         activeState.deactivate();
