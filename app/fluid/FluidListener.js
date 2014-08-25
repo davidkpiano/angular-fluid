@@ -16,12 +16,12 @@ function FluidListener(state, activeListener, inactiveListener) {
     init();
 }
 
-FluidListener.prototype.notify = function() {
+FluidListener.prototype.notify = function(active) {
     var self = this;
 
-    if (self.state.active && self.activeListener) {
+    if (active && self.activeListener) {
         self.activeListener();
-    } else if (!self.state.active && self.inactiveListener) {
+    } else if (!active && self.inactiveListener) {
         self.inactiveListener();
     }
 

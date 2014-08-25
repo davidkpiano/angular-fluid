@@ -46,7 +46,11 @@ FluidTrigger.prototype.activate = function() {
 
     console.log("Triggering trigger '%s'", self.id);
 
-    self.instance.queue(self.states);
+    _.forEach(self.states, function(state) {
+        state.validate();
+    });
+
+    self.instance.getStates();
 
     return self;
 }

@@ -61,8 +61,6 @@ function FluidInstance(id, scope, $parse) {
 
     self.rules = [];
 
-    self.cycle = new FluidCycle(self);
-
     self.scope = scope;
 
     self.$parse = $parse;
@@ -107,7 +105,7 @@ FluidInstance.prototype.getStates = function() {
     return self._state;
 }
 
-FluidInstance.prototype.state = function(id, triggers, deterministic) {
+FluidInstance.prototype.state = function(id, rule, deterministic) {
     var self = this;
 
     var fluidState = null;
@@ -121,7 +119,7 @@ FluidInstance.prototype.state = function(id, triggers, deterministic) {
     }
     
     if (!fluidState) {
-        fluidState = self.createState(id, triggers, deterministic);
+        fluidState = self.createState(id, rule, deterministic);
     }
 
     return fluidState;
@@ -305,14 +303,6 @@ FluidInstance.prototype.onRule = function(ruleString, activeListener, inactiveLi
     var state = self.createState(_.uniqueId('_.listener_'), ruleString);
 
     self.on(state, activeListener, inactiveListener);
-
-    return self;
-}
-
-FluidInstance.prototype.queue = function(fluidStates) {
-    var self = this;
-
-    self.cycle.queue(fluidStates);
 
     return self;
 }
