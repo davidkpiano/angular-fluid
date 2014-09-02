@@ -24,12 +24,13 @@ angular.module('FluidApp')
                 });
         }
 
-        FL.state('user', 'user', true)
-            .acceptAny();
+        FL.state('user', 'user', true).acceptAny()
+            .sink('user.valid');
 
         FL.state('user.valid');
 
-        FL.state('user.invalid');
+        FL.state('user.invalid')
+            .addRule('@user.invalid.length || @user.invalid.illegal');
 
         FL.state('user.invalid.length')
             .addRule(function() {
@@ -77,37 +78,85 @@ angular.module('FluidApp')
     }]);
 
 angular.module('FluidApp')
-    .controller('TrafficController', ['FluidService', '$interval', function(FluidService, $interval) {
+    .controller('TennisController', ['FluidService', '$interval', function(FluidService, $interval) {
         var self = this;
-        var FL = window.traffic = FluidService.register('traffic', self);
+        var FL = window.tennis = FluidService.register('tennis', self);
 
         this.ui = FL.state();
 
-        FL.state('light', 'foo', true);
+        self.p1Scored = function() {
+            return self.foo.slice(-1) == 'p';
+        }
 
-        FL.state('light.go', false).to('light.wait').initial();
+        self.q1Scored = function() {
+            return self.foo.slice(-1) == 'q';
+        }
 
-        FL.state('light.wait', false).to('light.stop');
+        FL.state('p1', 'foo', true).acceptAny()
+            .initial('p1.love');
 
-        FL.state('light.stop', false).to('light.go');
+        FL.state('p1.love')
+            .to('p1.s15', self.p1Scored);
+
+        FL.state('p1.s15')
+            .to('p1.s30', self.p1Scored);
+
+        FL.state('p1.s30')
+            .to('p1.s40', function() {
+                return !FL.isActive('q1.s40') && self.p1Scored();
+            })
+            .to('p1.deuce', '@q1.s40');
+
+        FL.state('p1.s40')
+            .to('p1.win', self.p1Scored)
+            .to('p1.deuce', '@q1.s40 || @q1.deuce');
+
+        FL.state('p1.deuce')
+            .to('p1.ad', self.p1Scored)
+            .to('p1.dis', self.q1Scored);
+
+        FL.state('p1.ad')
+            .to('p1.win', self.p1Scored)
+            .to('p1.deuce', self.q1Scored);
+
+        FL.state('p1.dis')
+            .to('p1.deuce', self.p1Scored);
+
+        FL.state('p1.win');
+
+        FL.state('q1', 'foo', true).acceptAny()
+            .initial('q1.love');
+
+        FL.state('q1.love')
+            .to('q1.s15', self.q1Scored);
+
+        FL.state('q1.s15')
+            .to('q1.s30', self.q1Scored);
+
+        FL.state('q1.s30')
+            .to('q1.s40', function() {
+                return !FL.isActive('p1.s40') && self.q1Scored();
+            })
+            .to('q1.deuce', '@p1.s40 || @p1.deuce');
+
+        FL.state('q1.s40')
+            .to('q1.win', self.q1Scored);
+
+        FL.state('q1.deuce')
+            .to('q1.ad', self.q1Scored)
+            .to('q1.dis', self.p1Scored);
+
+        FL.state('q1.ad')
+            .to('q1.win', self.q1Scored)
+            .to('q1.deuce', self.p1Scored);
+
+        FL.state('q1.dis')
+            .to('q1.deuce', self.q1Scored);
+
+        FL.state('q1.win');
 
         FL.initialize();
 
-        var foo = {
-            light: {
-                states: {
-                    go: {
-                        to: 'light.wait'
-                    }
-                }
-            }
-        }
-
-        self.touch = function() {
-            $interval(function() {
-                FL.state('light').determine();
-            }, 1000);
-        }
     }]);
 
 

@@ -37,14 +37,10 @@
                 {{login.test.active}}
             </pre>
         </div>
-        <div class="col-6 col-auto theme-white content" ng-controller="TrafficController as traffic">
-            <input type="text" ng-model="traffic.foo">
-            <div class="alert success" ng-show="traffic.ui.light.go">Go!</div>
-            <div class="alert warning" ng-show="traffic.ui.light.wait">Wait!</div>
-            <div class="alert failure" ng-show="traffic.ui.light.stop">Stop!</div>
-            <pre>{{traffic.ui | json}}</pre>
-            {{traffic.timer}}
-            <button ng-click="traffic.touch()">Start Timer</button>
+        <div class="col-6 col-auto theme-white content" ng-controller="TennisController as tennis">
+            <strong>P1 score;</strong>
+            <pre class="small">{{tennis.ui | json}}</pre>
+            <input type="text" name="" id="" ng-model="tennis.foo">
         </div>
     </div>
 </body>
@@ -56,7 +52,6 @@
 
 <script src="app/fluid/FluidState.js"></script>
 <script src="app/fluid/FluidRule.js"></script>
-<script src="app/fluid/FluidCycle.js"></script>
 <script src="app/fluid/FluidTrigger.js"></script>
 <script src="app/fluid/FluidInstance.js"></script>
 <script src="app/fluid/FluidListener.js"></script>

@@ -71,16 +71,6 @@ FluidState.prototype.initializeAutomaton = function() {
         }
     }
 
-    if (!(initialFluidState instanceof FluidState)) {
-        initialFluidState = _.find(self.states, function(fluidState) {
-            return fluidState.isValid();
-        });
-
-        console.log(initialFluidState);
-    }
-
-    initialFluidState.activate();
-
     return self;
 }
 
@@ -89,6 +79,14 @@ FluidState.prototype.initial = function(state) {
     var self = this;
 
     self.transitions.initial = state;
+
+    return self;
+}
+
+FluidState.prototype.sink = FluidState.prototype.default = function(state) {
+    var self = this;
+
+    self.transitions.sink = state;
 
     return self;
 }
@@ -136,6 +134,8 @@ FluidState.prototype.from = function(fromState, rule) {
 
 FluidState.prototype.to = function(toState, rule) {
     var self = this;
+
+    console.log('heye', rule);
 
     if (rule) {
         self.instance.addRule(rule, toState, self);
@@ -198,6 +198,10 @@ FluidState.prototype.initializeTransitions = function() {
 
     if (self.transitions.initial) {
         self.transitions.initial = self.instance.getState(self.transitions.initial);
+    }
+
+    if (self.transitions.sink) {
+        self.transitions.sink = self.instance.getState(self.transitions.sink);
     }
 
     return self;
@@ -329,6 +333,11 @@ FluidState.prototype.isValid = function(fromState) {
             return fluidRule.fromState === self.instance
                 || fluidRule.fromState === fromState;
         });
+
+        // Is valid from self but no self-rules
+        if (fromState === true && !fluidRules.length) {
+            return false;
+        }
     }
 
     _.forEach(fluidRules, function(fluidRule) {
@@ -354,6 +363,12 @@ FluidState.prototype.notify = function() {
     }
 
     self.notifyListeners();
+
+    if (!self.deterministic) {
+        _.each(self.states, function(fluidState) {
+            fluidState.validate();
+        });
+    }
 
     return self;
 }
@@ -392,41 +407,62 @@ FluidState.prototype.deactivate = function() {
 FluidState.prototype.determine = function(targetState) {
     var self = this;
 
-    console.log("Determining state '%s'", self.id);
+    console.groupCollapsed("Determining state '%s'", self.id);
 
-    var activeState = _.find(self.states, {active: true});
+    var activeState = getActiveState();
 
-    var nextState;
+    var nextState = getNextState();
 
-    if (!activeState) {
-        console.error("Deterministic parent state '%s' has no initial state.", self.id);
-        return false;
-    }
+    var sinkState = self.transitions.sink;
 
-    if (arguments.length && targetState instanceof FluidState) {
-        nextState = targetState;
-    } else {
-        nextState = _.find(self.states, function(fluidState) {
-            return fluidState.isValid(activeState)
-                && fluidState.hasTransitionFrom(activeState);
-            });
-    }
+    // if (!nextState) {    
+    //     if (arguments.length && targetState instanceof FluidState) {
+    //         nextState = targetState;
+    //     } else {
+    //         nextState = _.find(self.states, function(fluidState) {
+    //             return fluidState.isValid(activeState)
+    //                 && self.transitions.sink !== fluidState
+    //                 && fluidState.hasTransitionFrom(activeState);
+    //             });
+    //     }
+    // }
 
-    if (!nextState) {
-        if (activeState.isValid()) {
-            return self;
-        } else {        
-            console.error("Unable to transition from state '%s'; transitions may be incomplete.", activeState.id);
+    // if (!nextState) {
+    //     if (activeState.isValid()) {
+    //         console.groupEnd();
+    //         return self;
+    //     } else if (self.transitions.sink) {
+    //         nextState = self.transitions.sink;
+    //     } else {
+    //         console.error("Unable to transition from state '%s'; transitions may be incomplete.", activeState.id);
 
+    //         console.groupEnd();
+    //         return false;
+    //     }
+    // } else if (targetState) {
+    //     if (!activeState.hasTransitionTo(targetState)) {
+    //         console.error("Active state '%s' has no transition to target state '%s'", activeState.id, targetState.id);
+
+    //         console.groupEnd();
+    //         return false;
+    //     }
+    // }
+
+    if (nextState) {
+        if (activeState.isValid(true)) {
+            console.error("Multiple transitions exist from state '%s' (self and '%s').", activeState.id, nextState.id);
             return false;
         }
-    } else if (!activeState.hasTransitionTo(targetState)) {
-        console.error("Active state '%s' has no transition to target state '%s'", activeState.id, targetState.id);
-
-        return false;
+    } else if (activeState.isValid()) {
+        nextState = activeState;
+    } else if (sinkState) {
+        nextState = sinkState;
     } else {
-        activeState.deactivate();
+        console.error("No transitions exist from state '%s'.", activeState.id);
+    }
 
+    if (activeState !== nextState) {    
+        activeState.deactivate();
         nextState.activate();
 
         (nextState.transitions.accepting || self.transitions.acceptAny)
@@ -434,7 +470,57 @@ FluidState.prototype.determine = function(targetState) {
             : self.deactivate();
     }
 
+    console.groupEnd();
     return self;
+
+    function getActiveState() {
+        var activeState = _.find(self.states, {active: true});
+
+        if (!activeState) {
+            if (self.transitions.initial) {
+                activeState = self.transitions.initial;
+            } else if (sinkState) {
+                activeState = sinkState;
+            } else {
+                console.error("There is no active/initial/sink state for parent state '%s'.", self.id);
+
+                return false;
+            }
+        }
+
+        return activeState;
+    }
+
+    function getNextState() {
+        var nextState;
+
+        if (targetState instanceof FluidState) {
+            if (activeState.hasTransitionTo(targetState)) {
+                nextState = targetState;
+            } else {
+                // error
+                return false;
+            }
+        } else {
+            nextState = _.find(activeState.transitions.to, function(fluidState) {
+                return fluidState.isValid(activeState);
+            });
+
+            if (!nextState) {
+                if (activeState.isValid()) {
+                    nextState = activeState;
+                } else if (sinkState) {
+                    nextState = sinkState;
+                } else {
+                    console.error("There is no next/sink state for parent state '%s'.", self.id);
+
+                    return false;
+                }
+            }
+        }
+
+        return nextState;
+    }
 }
 
 FluidState.prototype.go = function() {

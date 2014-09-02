@@ -61,8 +61,6 @@ function FluidInstance(id, scope, $parse) {
 
     self.rules = [];
 
-    self.cycle = new FluidCycle(self);
-
     self.scope = scope;
 
     self.$parse = $parse;
@@ -243,7 +241,7 @@ FluidInstance.prototype.parse = function(rule) {
     var valid = false;
 
     var formattedRule = rule.replace(self.settings.regex.TRIGGER_STATE, function parseStateReplace(match) {
-        return self.isActive(match);
+        return self.getState(match).active;
     }, 'g');
 
     valid = self.$parse(formattedRule)(self.scope[self.id]);
@@ -305,14 +303,6 @@ FluidInstance.prototype.onRule = function(ruleString, activeListener, inactiveLi
     var state = self.createState(_.uniqueId('_.listener_'), ruleString);
 
     self.on(state, activeListener, inactiveListener);
-
-    return self;
-}
-
-FluidInstance.prototype.queue = function(fluidStates) {
-    var self = this;
-
-    self.cycle.queue(fluidStates);
 
     return self;
 }
